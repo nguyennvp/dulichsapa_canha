@@ -1,242 +1,778 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Quản lý Chuyến Đi Gia Đình</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; }
-    .loading { opacity: 0.7; pointer-events: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Chuyến Đi</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .trip-form {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .input-field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-field label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .input-field input, .input-field textarea {
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+        
+        .input-field textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .input-field input:focus, .input-field textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+        
+        .trips-list {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .trip-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .trip-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .trip-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .trip-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .trip-info-item {
+            font-size: 0.9em;
+        }
+        
+        .trip-info-item strong {
+            color: #495057;
+        }
+        
+        .trip-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .daily-schedule {
+            margin-top: 20px;
+        }
+        
+        .day-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .day-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .day-card-content {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .expense-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .trip-detail-section {
+            margin-bottom: 30px;
+        }
+        
+        .trip-detail-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .back-button {
+            margin-bottom: 20px;
+        }
+        
+        .summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .summary-item {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .summary-item strong {
+            display: block;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .summary-item span {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-gray-100">
-  <div class="container mx-auto p-4 max-w-7xl">
-
-    <h1 class="text-4xl font-bold text-center my-8 text-indigo-700">
-      <i class="fas fa-suitcase-rolling mr-3"></i>
-      Quản Lý Chuyến Đi Gia Đình
-    </h1>
-
-    <!-- Danh sách chuyến đi -->
-    <div id="trips-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Các card chuyến đi sẽ được render bằng JS -->
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 Quản Lý Chuyến Đi</h1>
+            <p>Hệ thống quản lý chi phí và kế hoạch chuyến đi chi tiết</p>
+        </div>
+        
+        <div class="content">
+            <div class="status" id="status"></div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('trips')">Danh sách chuyến đi</button>
+                <button class="tab" onclick="switchTab('new-trip')">Tạo chuyến đi mới</button>
+            </div>
+            
+            <div id="trips-tab" class="tab-content active">
+                <h2>📋 Danh sách chuyến đi</h2>
+                <div id="tripsList" class="trips-list loading">
+                    Đang tải dữ liệu...
+                </div>
+            </div>
+            
+            <div id="new-trip-tab" class="tab-content">
+                <h2>➕ Tạo chuyến đi mới</h2>
+                <form class="trip-form" onsubmit="createTrip(event)">
+                    <div class="form-row">
+                        <div class="input-field">
+                            <label>Tên chuyến đi *</label>
+                            <input type="text" name="trip_name" required>
+                        </div>
+                        <div class="input-field">
+                            <label>Ngày bắt đầu *</label>
+                            <input type="date" name="date_from" required>
+                        </div>
+                        <div class="input-field">
+                            <label>Ngày kết thúc *</label>
+                            <input type="date" name="date_to" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-field">
+                            <label>Tổng số gia đình</label>
+                            <input type="number" name="total_families" min="0">
+                        </div>
+                        <div class="input-field">
+                            <label>Tổng số người</label>
+                            <input type="number" name="total_people" min="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-field">
+                            <label>Chi phí khách sạn/ngày</label>
+                            <input type="number" name="hotel_cost_per_day" step="0.01" min="0">
+                        </div>
+                        <div class="input-field">
+                            <label>Chi phí ăn/ngày (ước tính)</label>
+                            <input type="number" name="food_cost_per_day" step="0.01" min="0">
+                        </div>
+                        <div class="input-field">
+                            <label>Tổng chi phí vận chuyển</label>
+                            <input type="number" name="transport_total" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">Tạo chuyến đi</button>
+                </form>
+            </div>
+            
+            <div id="trip-detail-tab" class="tab-content">
+                <button class="btn btn-small back-button" onclick="backToList()">← Quay lại danh sách</button>
+                <div id="tripDetailContent"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Chi tiết chuyến đi (modal) -->
-    <div id="trip-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
-        <div class="p-6 border-b flex justify-between items-center">
-          <h2 id="modal-title" class="text-2xl font-bold text-indigo-700"></h2>
-          <button onclick="closeModal()" class="text-gray-500 hover:text-gray-800 text-2xl">
-            &times;
-          </button>
-        </div>
-
-        <div class="p-6" id="modal-content">
-          <!-- Nội dung chi tiết sẽ được render ở đây -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ======== THAY ĐỔI 2 DÒNG NÀY BẰNG PROJECT CỦA BẠN ========
-    const SUPABASE_URL = 'https://uqexdrrmmmjtvtntavtb.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZXhkcnJtbW1qdHZ0bnRhdnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NDkyOTMsImV4cCI6MjA3OTUyNTI5M30.69ZiV6JZVbS0fWVcILLAcklSLgXieehfet_Y2T2WYzY';
-    // =========================================================
-
-    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Load danh sách chuyến đi khi mở trang
-    window.onload = () => loadTrips();
-
-    async function loadTrips() {
-      const { data: trips, error } = await supabase
-        .from('trips')
-        .select('*')
-        .order('date_from', { ascending: false });
-
-      if (error) {
-        alert('Lỗi tải dữ liệu: ' + error.message);
-        return;
-      }
-
-      const container = document.getElementById('trips-list');
-      container.innerHTML = '';
-
-      if (trips.length === 0) {
-        container.innerHTML = '<p class="text-center col-span-full text-gray-500 text-xl">Chưa có chuyến đi nào</p>';
-        return;
-      }
-
-      trips.forEach(trip => {
-        const days = trip.date_to ? 
-          Math.ceil((new Date(trip.date_to) - new Date(trip.date_from)) / 86400000) + 1 : 1;
-
-        const card = `
-          <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer p-6"
-               onclick="openTripDetail(${trip.id})">
-            <h3 class="text-xl font-bold text-indigo-700 mb-2">${trip.trip_name || 'Chưa đặt tên'}</h3>
-            <div class="text-sm text-gray-600 space-y-1">
-              <p><i class="fas fa-calendar mr-2"></i>
-                ${formatDate(trip.date_from)} → ${trip.date_to ? formatDate(trip.date_to) : '...'} 
-                <span class="font-medium">(${days} ngày)</span>
-              </p>
-              <p><i class="fas fa-users mr-2"></i>${trip.total_families} gia đình – ${trip.total_people} người</p>
-              <p><i class="fas fa-hotel mr-2"></i>Khách sạn: ${formatMoney(trip.hotel_cost_per_day)} / ngày</p>
-              <p><i class="fas fa-utensils mr-2"></i>Ăn uống: ${formatMoney(trip.food_cost_per_day)} / ngày</p>
-              <p><i class="fas fa-bus mr-2"></i>Di chuyển tổng: ${formatMoney(trip.transport_total)}</p>
-            </div>
-            <div class="mt-4 text-right">
-              <span class="text-xs text-gray-400">
-                Tạo lúc ${new Date(trip.created_at).toLocaleString('vi-VN')}
-              </span>
-            </div>
-          </div>
-        `;
-        container.innerHTML += card;
-      });
-    }
-
-    async function openTripDetail(tripId) {
-      document.getElementById('trip-detail-modal').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-
-      const { data: trip } = await supabase.from('trips').select('*').eq('id', tripId).single();
-      
-      document.getElementById('modal-title').textContent = trip.trip_name || 'Chuyến đi #' + trip.id;
-
-      // Lấy dữ liệu liên quan
-      const [families, transports, dailyFoods] = await Promise.all([
-        supabase.from('families').select('*').eq('trip_id', tripId),
-        supabase.from('transport').select('*').eq('trip_id', tripId),
-        supabase.from('daily_food_cost').select('*').eq('trip_id', tripId).order('date')
-      ]);
-
-      const days = trip.date_to ? 
-        Math.ceil((new Date(trip.date_to) - new Date(trip.date_from)) / 86400000) + 1 : 1;
-
-      let totalHotel = (trip.hotel_cost_per_day || 0) * days;
-      let totalFood = (trip.food_cost_per_day || 0) * days;
-      let totalTransport = trip.transport_total || 0;
-
-      let html = `
-        <div class="grid md:grid-cols-2 gap-6 mb-8">
-          <div>
-            <h4 class="font-bold text-lg mb-3"><i class="fas fa-info-circle mr-2"></i>Thông tin chung</h4>
-            <table class="w-full text-sm">
-              <tr><td class="py-1 font-medium">Thời gian</td><td>: ${formatDate(trip.date_from)} → ${trip.date_to ? formatDate(trip.date_to) : 'Chưa xác định'} (${days} ngày)</td></tr>
-              <tr><td class="py-1 font-medium">Số gia đình</td><td>: ${trip.total_families}</td></tr>
-              <tr><td class="py-1 font-medium">Tổng người</td><td>: ${trip.total_people}</td></tr>
-              <tr><td class="py-1 font-medium">Khách sạn/ngày</td><td>: ${formatMoney(trip.hotel_cost_per_day)}</td></tr>
-              <tr><td class="py-1 font-medium">Ăn uống/ngày</td><td>: ${formatMoney(trip.food_cost_per_day)}</td></tr>
-              <tr><td class="py-1 font-medium">Di chuyển tổng</td><td>: ${formatMoney(trip.transport_total)}</td></tr>
-            </table>
-          </div>
-          <div class="text-right">
-            <div class="bg-indigo-50 p-5 rounded-lg">
-              <p class="text-sm text-gray-600">Tổng chi phí ước tính</p>
-              <p class="text-3xl font-bold text-indigo-700">${formatMoney(totalHotel + totalFood + totalTransport)}</p>
-              <p class="text-xs text-gray-500 mt-2">
-                Khách sạn ${formatMoney(totalHotel)} + Ăn uống ${formatMoney(totalFood)} + Di chuyển ${formatMoney(totalTransport)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Danh sách gia đình -->
-        <div class="mt-8">
-          <h4 class="font-bold text-lg mb-3"><i class="fas fa-users mr-2 text-green-600"></i>Danh sách gia đình (${families.data.length})</h4>
-          ${families.data.length === 0 ? '<p class="text-gray-500">Chưa có gia đình nào</p>' : 
-            '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">' +
-            families.data.map(f => `
-              <div class="bg-green-50 p-3 rounded-lg text-center">
-                <p class="font-medium">${f.family_name}</p>
-                <p class="text-sm text-gray-600">${f.total_people} người</p>
-              </div>
-            `).join('') + '</div>'
-          }
-        </div>
-
-        <!-- Di chuyển -->
-        <div class="mt-8">
-          <h4 class="font-bold text-lg mb-3"><i class="fas fa-bus mr-2 text-blue-600"></i>Chi phí di chuyển</h4>
-          ${transports.data.length === 0 ? '<p class="text-gray-500">Chưa có dữ liệu di chuyển</p>' :
-            '<div class="overflow-x-auto"><table class="w-full text-sm border-collapse">
-              <thead class="bg-blue-100"><tr>
-                <th class="p-2 text-left">Từ → Đến</th>
-                <th class="p-2">Loại</th>
-                <th class="p-2 text-right">Chi phí</th>
-              </tr></thead>
-              <tbody>' +
-              transports.data.map(t => `
-                <tr class="border-b">
-                  <td class="p-2">${t.from_location} → ${t.to_location}</td>
-                  <td class="p-2 text-center">${t.type || '-'}</td>
-                  <td class="p-2 text-right font-medium">${formatMoney(t.cost)}</td>
-                </tr>
-              `).join('') + 
-              `<tr class="font-bold bg-blue-50">
-                <td colspan="2" class="p-3 text-right">Tổng cộng</td>
-                <td class="p-3 text-right">${formatMoney(trip.transport_total)}</td>
-              </tr>
-              </tbody></table></div>`
-          }
-        </div>
-
-        <!-- Chi phí ăn uống từng ngày -->
-        <div class="mt-8">
-          <h4 class="font-bold text-lg mb-3"><i class="fas fa-utensils mr-2 text-orange-600"></i>Chi phí ăn uống theo ngày</h4>
-          ${dailyFoods.data.length === 0 ? '<p class="text-gray-500">Chưa có dữ liệu chi tiết ăn uống</p>' :
-            '<div class="overflow-x-auto"><table class="w-full text-sm border-collapse">
-              <thead class="bg-orange-100"><tr>
-                <th class="p-2">Ngày</th>
-                <th class="p-2 text-right">Sáng</th>
-                <th class="p-2 text-right">Trưa</th>
-                <th class="p-2 text-right">Tối</th>
-                <th class="p-2 text-right font-bold">Tổng</th>
-              </tr></thead>
-              <tbody>' +
-              dailyFoods.data.map(d => `
-                <tr class="border-b">
-                  <td class="p-2 font-medium">${formatDate(d.date)}</td>
-                  <td class="p-2 text-right">${formatMoney(d.breakfast)}</td>
-                  <td class="p-2 text-right">${formatMoney(d.lunch)}</td>
-                  <td class="p-2 text-right">${formatMoney(d.dinner)}</td>
-                  <td class="p-2 text-right font-bold">${formatMoney(d.total)}</td>
-                </tr>
-              `).join('') +
-              '</tbody></table></div>'
-          }
-        </div>
-      `;
-
-      document.getElementById('modal-content').innerHTML = html;
-    }
-
-    function closeModal() {
-      document.getElementById('trip-detail-modal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
-    }
-
-    // Helper functions
-    function formatDate(dateStr) {
-      if (!dateStr) return '-';
-      return new Date(dateStr).toLocaleDateString('vi-VN');
-    }
-
-    function formatMoney(num) {
-      if (num === null || num === undefined) return '0 ₫';
-      return Number(num).toLocaleString('vi-VN') + ' ₫';
-    }
-
-    // Đóng modal khi click ngoài
-    document.getElementById('trip-detail-modal').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
-  </script>
+    <script>
+        // Cấu hình Supabase cố định
+        const SUPABASE_URL = 'https://uqexdrrmmmjtvtntavtb.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZXhkcnJtbW1qdHZ0bnRhdnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NDkyOTMsImV4cCI6MjA3OTUyNTI5M30.69ZiV6JZVbS0fWVcILLAcklSLgXieehfet_Y2T2WYzY';
+        
+        let supabase = null;
+        let currentTrip = null;
+        
+        // Khởi tạo Supabase khi tải trang
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                loadTrips();
+            } catch (error) {
+                showStatus('Lỗi kết nối Supabase: ' + error.message, 'error');
+            }
+        });
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            const activeTab = Array.from(document.querySelectorAll('.tab')).find(
+                t => t.textContent.includes(tabName === 'trips' ? 'Danh sách' : 'Tạo')
+            );
+            if (activeTab) activeTab.classList.add('active');
+            
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+        
+        async function loadTrips() {
+            const tripsList = document.getElementById('tripsList');
+            tripsList.innerHTML = '<div class="loading">Đang tải dữ liệu...</div>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('trips')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                if (data.length === 0) {
+                    tripsList.innerHTML = '<p style="text-align: center; color: #6c757d;">Chưa có chuyến đi nào. Hãy tạo chuyến đi mới!</p>';
+                    return;
+                }
+                
+                tripsList.innerHTML = data.map(trip => {
+                    const days = calculateDays(trip.date_from, trip.date_to);
+                    return `
+                    <div class="trip-card">
+                        <h3>${trip.trip_name}</h3>
+                        <div class="trip-info">
+                            <div class="trip-info-item">
+                                <strong>Từ:</strong> ${formatDate(trip.date_from)}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>Đến:</strong> ${formatDate(trip.date_to)}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>Số ngày:</strong> ${days} ngày
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>Gia đình:</strong> ${trip.total_families || 0}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>Người:</strong> ${trip.total_people || 0}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>KS/ngày:</strong> ${formatMoney(trip.hotel_cost_per_day)}
+                            </div>
+                        </div>
+                        <div class="trip-actions">
+                            <button class="btn btn-small" onclick="viewTripDetails(${trip.id})">📅 Chi tiết & Kế hoạch</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteTrip(${trip.id})">🗑️ Xóa</button>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            } catch (error) {
+                showStatus('Lỗi tải dữ liệu: ' + error.message, 'error');
+                tripsList.innerHTML = '<p style="text-align: center; color: #dc3545;">Không thể tải dữ liệu</p>';
+            }
+        }
+        
+        async function createTrip(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const tripData = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (value === '') continue;
+                tripData[key] = ['total_families', 'total_people'].includes(key) 
+                    ? parseInt(value) 
+                    : ['hotel_cost_per_day', 'food_cost_per_day', 'transport_total'].includes(key)
+                    ? parseFloat(value)
+                    : value;
+            }
+            
+            try {
+                const { data, error } = await supabase
+                    .from('trips')
+                    .insert([tripData])
+                    .select();
+                
+                if (error) throw error;
+                
+                showStatus('Tạo chuyến đi thành công!', 'success');
+                form.reset();
+                switchTab('trips');
+                loadTrips();
+            } catch (error) {
+                showStatus('Lỗi tạo chuyến đi: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteTrip(id) {
+            if (!confirm('Bạn có chắc muốn xóa chuyến đi này? Tất cả dữ liệu liên quan sẽ bị xóa.')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('trips')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showStatus('Xóa chuyến đi thành công!', 'success');
+                loadTrips();
+            } catch (error) {
+                showStatus('Lỗi xóa chuyến đi: ' + error.message, 'error');
+            }
+        }
+        
+        async function viewTripDetails(tripId) {
+            try {
+                const { data: trip, error } = await supabase
+                    .from('trips')
+                    .select('*')
+                    .eq('id', tripId)
+                    .single();
+                
+                if (error) throw error;
+                
+                currentTrip = trip;
+                
+                // Load daily food costs
+                const { data: dailyFoodData } = await supabase
+                    .from('daily_food_cost')
+                    .select('*')
+                    .eq('trip_id', tripId)
+                    .order('date');
+                
+                const dailyFoodMap = {};
+                if (dailyFoodData) {
+                    dailyFoodData.forEach(item => {
+                        dailyFoodMap[item.date] = item;
+                    });
+                }
+                
+                const days = getDaysArray(trip.date_from, trip.date_to);
+                const totalDays = days.length;
+                
+                let totalFoodCost = 0;
+                dailyFoodData?.forEach(item => {
+                    totalFoodCost += parseFloat(item.total || 0);
+                });
+                
+                const totalHotelCost = (trip.hotel_cost_per_day || 0) * totalDays;
+                const grandTotal = totalFoodCost + totalHotelCost + (trip.transport_total || 0);
+                
+                const detailContent = document.getElementById('tripDetailContent');
+                detailContent.innerHTML = `
+                    <div class="summary-box">
+                        <h2>📊 Tổng quan: ${trip.trip_name}</h2>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <strong>Thời gian</strong>
+                                <span>${totalDays} ngày</span>
+                            </div>
+                            <div class="summary-item">
+                                <strong>Chi phí khách sạn</strong>
+                                <span>${formatMoney(totalHotelCost)}</span>
+                            </div>
+                            <div class="summary-item">
+                                <strong>Chi phí ăn uống</strong>
+                                <span>${formatMoney(totalFoodCost)}</span>
+                            </div>
+                            <div class="summary-item">
+                                <strong>Chi phí vận chuyển</strong>
+                                <span>${formatMoney(trip.transport_total)}</span>
+                            </div>
+                            <div class="summary-item">
+                                <strong>Tổng cộng</strong>
+                                <span>${formatMoney(grandTotal)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="trip-detail-section">
+                        <h3>📅 Kế hoạch và Chi phí từng ngày</h3>
+                        <div class="daily-schedule">
+                            ${days.map((date, index) => {
+                                const dateStr = date.toISOString().split('T')[0];
+                                const foodData = dailyFoodMap[dateStr] || {};
+                                return `
+                                    <div class="day-card">
+                                        <h3>
+                                            <span>🗓️ Ngày ${index + 1} - ${formatDate(dateStr)}</span>
+                                        </h3>
+                                        <div class="day-card-content">
+                                            <div class="input-field">
+                                                <label>📝 Kế hoạch trong ngày</label>
+                                                <textarea 
+                                                    id="plan_${dateStr}" 
+                                                    placeholder="Vd: 8:00 - Ăn sáng tại khách sạn
+9:00 - Tham quan bảo tàng
+12:00 - Ăn trưa tại nhà hàng ABC
+..."
+                                                >${foodData.plan || ''}</textarea>
+                                            </div>
+                                            
+                                            <div class="expense-row">
+                                                <div class="input-field">
+                                                    <label>🍳 Ăn sáng</label>
+                                                    <input type="number" 
+                                                        id="breakfast_${dateStr}" 
+                                                        value="${foodData.breakfast || ''}" 
+                                                        placeholder="0" 
+                                                        step="1000" 
+                                                        min="0">
+                                                </div>
+                                                <div class="input-field">
+                                                    <label>🍜 Ăn trưa</label>
+                                                    <input type="number" 
+                                                        id="lunch_${dateStr}" 
+                                                        value="${foodData.lunch || ''}" 
+                                                        placeholder="0" 
+                                                        step="1000" 
+                                                        min="0">
+                                                </div>
+                                                <div class="input-field">
+                                                    <label>🍽️ Ăn tối</label>
+                                                    <input type="number" 
+                                                        id="dinner_${dateStr}" 
+                                                        value="${foodData.dinner || ''}" 
+                                                        placeholder="0" 
+                                                        step="1000" 
+                                                        min="0">
+                                                </div>
+                                                <div class="input-field">
+                                                    <label>🎯 Chi phí khác</label>
+                                                    <input type="number" 
+                                                        id="other_${dateStr}" 
+                                                        value="${foodData.other || ''}" 
+                                                        placeholder="0" 
+                                                        step="1000" 
+                                                        min="0">
+                                                </div>
+                                            </div>
+                                            
+                                            <button class="btn btn-small btn-success" onclick="saveDailyData('${dateStr}')">
+                                                💾 Lưu ngày này
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        
+                        <button class="btn" onclick="saveAllDays()">💾 Lưu tất cả các ngày</button>
+                    </div>
+                `;
+                
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('trip-detail-tab').classList.add('active');
+                
+            } catch (error) {
+                showStatus('Lỗi tải chi tiết: ' + error.message, 'error');
+            }
+        }
+        
+        async function saveDailyData(date) {
+            const plan = document.getElementById(`plan_${date}`).value;
+            const breakfast = parseFloat(document.getElementById(`breakfast_${date}`).value) || 0;
+            const lunch = parseFloat(document.getElementById(`lunch_${date}`).value) || 0;
+            const dinner = parseFloat(document.getElementById(`dinner_${date}`).value) || 0;
+            const other = parseFloat(document.getElementById(`other_${date}`).value) || 0;
+            const total = breakfast + lunch + dinner + other;
+            
+            try {
+                const { data: existing } = await supabase
+                    .from('daily_food_cost')
+                    .select('id')
+                    .eq('trip_id', currentTrip.id)
+                    .eq('date', date)
+                    .single();
+                
+                const dailyData = {
+                    trip_id: currentTrip.id,
+                    date: date,
+                    breakfast: breakfast,
+                    lunch: lunch,
+                    dinner: dinner,
+                    other: other,
+                    total: total,
+                    plan: plan
+                };
+                
+                if (existing) {
+                    await supabase
+                        .from('daily_food_cost')
+                        .update(dailyData)
+                        .eq('id', existing.id);
+                } else {
+                    await supabase
+                        .from('daily_food_cost')
+                        .insert([dailyData]);
+                }
+                
+                showStatus(`Đã lưu dữ liệu ngày ${formatDate(date)}!`, 'success');
+            } catch (error) {
+                showStatus('Lỗi lưu dữ liệu: ' + error.message, 'error');
+            }
+        }
+        
+        async function saveAllDays() {
+            const days = getDaysArray(currentTrip.date_from, currentTrip.date_to);
+            let successCount = 0;
+            
+            for (const day of days) {
+                const dateStr = day.toISOString().split('T')[0];
+                try {
+                    await saveDailyData(dateStr);
+                    successCount++;
+                } catch (error) {
+                    console.error('Error saving day:', dateStr, error);
+                }
+            }
+            
+            showStatus(`Đã lưu ${successCount}/${days.length} ngày thành công!`, 'success');
+            setTimeout(() => viewTripDetails(currentTrip.id), 1000);
+        }
+        
+        function backToList() {
+            currentTrip = null;
+            switchTab('trips');
+        }
+        
+        function calculateDays(dateFrom, dateTo) {
+            const start = new Date(dateFrom);
+            const end = new Date(dateTo);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays + 1;
+        }
+        
+        function getDaysArray(dateFrom, dateTo) {
+            const days = [];
+            const start = new Date(dateFrom);
+            const end = new Date(dateTo);
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                days.push(new Date(d));
+            }
+            
+            return days;
+        }
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+            return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} (${dayNames[date.getDay()]})`;
+        }
+        
+        function formatMoney(value) {
+            if (!value) return '0 ₫';
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(value);
+        }
+    </script>
 </body>
 </html>
