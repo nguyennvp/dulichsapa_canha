@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CẢ NHÀ ĐI QUẨY SAPA</title>
+    <title>Quản Lý Chuyến Đi</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -33,15 +33,36 @@
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('https://uqexdrrmmmjtvtntavtb.supabase.co/storage/v1/object/public/ANH%20GIA%20DINH/z7256591072776_cf067dabfb0c5479d1012ef80c5f32c3.jpg') center/cover;
+            opacity: 0.2;
+            z-index: 0;
+        }
+        
+        .header h1, .header p {
+            position: relative;
+            z-index: 1;
         }
         
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
         .content {
             padding: 30px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
         }
         
         .tabs {
@@ -167,6 +188,21 @@
             border-radius: 12px;
             border-left: 5px solid #667eea;
             transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .trip-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: url('https://uqexdrrmmmjtvtntavtb.supabase.co/storage/v1/object/public/ANH%20GIA%20DINH/z7256591072776_cf067dabfb0c5479d1012ef80c5f32c3.jpg') center/cover;
+            opacity: 0.1;
+            border-radius: 50%;
+            transform: translate(30%, -30%);
         }
         
         .trip-card:hover {
@@ -226,6 +262,29 @@
             color: #6c757d;
         }
         
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state::before {
+            content: '✈️';
+            display: block;
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .trip-detail-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-bottom: 2px solid #e9ecef;
+            background: linear-gradient(90deg, #f8f9fa 0%, transparent 100%);
+            border-radius: 8px;
+        }
+        
         .daily-schedule {
             margin-top: 20px;
         }
@@ -236,6 +295,21 @@
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .day-card::after {
+            content: '';
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 120px;
+            height: 120px;
+            background: url('https://uqexdrrmmmjtvtntavtb.supabase.co/storage/v1/object/public/ANH%20GIA%20DINH/z7256591072776_cf067dabfb0c5479d1012ef80c5f32c3.jpg') center/cover;
+            opacity: 0.08;
+            border-radius: 8px;
+            pointer-events: none;
         }
         
         .day-card h3 {
@@ -244,6 +318,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            position: relative;
+            z-index: 1;
         }
         
         .day-card-content {
@@ -278,6 +354,25 @@
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .summary-box::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: url('https://uqexdrrmmmjtvtntavtb.supabase.co/storage/v1/object/public/ANH%20GIA%20DINH/z7256591072776_cf067dabfb0c5479d1012ef80c5f32c3.jpg') center/cover;
+            opacity: 0.15;
+            border-radius: 50%;
+        }
+        
+        .summary-box h2 {
+            position: relative;
+            z-index: 1;
         }
         
         .summary-grid {
@@ -285,12 +380,15 @@
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-top: 15px;
+            position: relative;
+            z-index: 1;
         }
         
         .summary-item {
             background: rgba(255,255,255,0.2);
             padding: 15px;
             border-radius: 8px;
+            backdrop-filter: blur(10px);
         }
         
         .summary-item strong {
@@ -309,19 +407,26 @@
     <div class="container">
         <div class="header">
             <h1>🌍 Quản Lý Chuyến Đi</h1>
-            <p>Lúc đi hết mình, lúc về hết buồn</p>
+            <p>Hệ thống quản lý chi phí và kế hoạch chuyến đi chi tiết</p>
         </div>
         
         <div class="content">
             <div class="status" id="status"></div>
             
             <div class="tabs">
-                <button class="tab" onclick="switchTab('new-trip')">Tạo chuyến đi mới</button>
                 <button class="tab active" onclick="switchTab('trips')">Danh sách chuyến đi</button>
+                <button class="tab" onclick="switchTab('new-trip')">Tạo chuyến đi mới</button>
             </div>
-                        
+            
+            <div id="trips-tab" class="tab-content active">
+                <h2>📋 Danh sách chuyến đi</h2>
+                <div id="tripsList" class="trips-list loading">
+                    Đang tải dữ liệu...
+                </div>
+            </div>
+            
             <div id="new-trip-tab" class="tab-content">
-                <h2>Khởi tạo kế hoạch</h2>
+                <h2>➕ Tạo chuyến đi mới</h2>
                 <form class="trip-form" onsubmit="createTrip(event)">
                     <div class="form-row">
                         <div class="input-field">
@@ -343,7 +448,7 @@
                             <input type="number" name="total_families" min="0">
                         </div>
                         <div class="input-field">
-                            <label>Tổng số người lớn</label>
+                            <label>Tổng số người</label>
                             <input type="number" name="total_people" min="0">
                         </div>
                     </div>
@@ -363,13 +468,6 @@
                     </div>
                     <button type="submit" class="btn">Tạo chuyến đi</button>
                 </form>
-            </div>
-
-            <div id="trips-tab" class="tab-content active">
-                <h2>📋 Danh sách chuyến đi</h2>
-                <div id="tripsList" class="trips-list loading">
-                    Đang tải dữ liệu...
-                </div>
             </div>
             
             <div id="trip-detail-tab" class="tab-content">
@@ -432,7 +530,7 @@
                 if (error) throw error;
                 
                 if (data.length === 0) {
-                    tripsList.innerHTML = '<p style="text-align: center; color: #6c757d;">Chưa có chuyến đi nào. Hãy tạo chuyến đi mới!</p>';
+                    tripsList.innerHTML = '<div class="empty-state"><p>Chưa có chuyến đi nào. Hãy tạo chuyến đi mới!</p></div>';
                     return;
                 }
                 
@@ -607,9 +705,9 @@
                                                 <textarea 
                                                     id="plan_${dateStr}" 
                                                     placeholder="Vd: 8:00 - Ăn sáng tại khách sạn
-                                                                    9:00 - Tham quan bảo tàng
-                                                                    12:00 - Ăn trưa tại nhà hàng ABC
-                                                                    ..."
+9:00 - Tham quan bảo tàng
+12:00 - Ăn trưa tại nhà hàng ABC
+..."
                                                 >${foodData.plan || ''}</textarea>
                                             </div>
                                             
@@ -618,7 +716,6 @@
                                                     <label>🍳 Ăn sáng</label>
                                                     <input type="number" 
                                                         id="breakfast_${dateStr}" 
-                                                        class="number-input"
                                                         value="${foodData.breakfast || ''}" 
                                                         placeholder="0" 
                                                         step="1000" 
@@ -628,7 +725,6 @@
                                                     <label>🍜 Ăn trưa</label>
                                                     <input type="number" 
                                                         id="lunch_${dateStr}" 
-                                                        class="number-input"
                                                         value="${foodData.lunch || ''}" 
                                                         placeholder="0" 
                                                         step="1000" 
@@ -637,7 +733,6 @@
                                                 <div class="input-field">
                                                     <label>🍽️ Ăn tối</label>
                                                     <input type="number" 
-                                                        class="number-input"
                                                         id="dinner_${dateStr}" 
                                                         value="${foodData.dinner || ''}" 
                                                         placeholder="0" 
@@ -777,22 +872,5 @@
             }).format(value);
         }
     </script>
-    
-    <script>
-    document.querySelectorAll(".number-input").forEach(input => {
-        input.addEventListener("input", function(e) {
-            let value = this.value.replace(/\D/g, "");
-            if (value === "") {
-                this.value = "";
-                return;
-            }
-            this.value = Number(value).toLocaleString("vi-VN");
-        });
-    });
-    </script>
-    
 </body>
 </html>
-
-
-
