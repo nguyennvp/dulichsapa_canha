@@ -1,115 +1,502 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Family Travel Planner</title>
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-    const supabaseUrl = "https://uqexdrrmmmjtvtntavtb.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZXhkcnJtbW1qdHZ0bnRhdnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NDkyOTMsImV4cCI6MjA3OTUyNTI5M30.69ZiV6JZVbS0fWVcILLAcklSLgXieehfet_Y2T2WYzY";
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    async function saveTrip() {
-      const trip = {
-        trip_name: document.getElementById("trip_name").value,
-        date_from: document.getElementById("date_from").value,
-        date_to: document.getElementById("date_to").value,
-        hotel_cost_per_day: document.getElementById("hotel_cost").value,
-        food_cost_per_day: document.getElementById("food_cost").value,
-      };
-
-      const { data: tripData, error: tripErr } = await supabase
-        .from("trips").insert(trip).select();
-      if (tripErr) return alert("Lỗi lưu trip: " + tripErr.message);
-
-      const tripId = tripData[0].id;
-
-      const familiesText = document.getElementById("families").value.split(";");
-      const families = familiesText.map(f => {
-        const p = f.split(":");
-        return { trip_id: tripId, family_name: p[0], total_people: Number(p[1]) };
-      });
-
-      await supabase.from("families").insert(families);
-
-      const transportText = document.getElementById("transport").value.split(";");
-      const transport = transportText.map(t => {
-        const p = t.split(",");
-        return {
-          trip_id: tripId,
-          from_location: p[0],
-          to_location: p[1],
-          cost: Number(p[2])
-        };
-      });
-
-      await supabase.from("transport").insert(transport);
-
-      alert("Đã lưu đầy đủ thông tin chuyến đi!");
-    }
-
-    async function loadTrips() {
-      const { data, error } = await supabase.from("trips").select();
-      if (error) return;
-      const list = document.getElementById("trip_list");
-      list.innerHTML = "";
-      data.forEach(t => {
-        const item = document.createElement("div");
-        item.innerHTML = `<b>${t.trip_name}</b> — ${t.date_from} → ${t.date_to}`;
-        list.appendChild(item);
-      });
-    }
-
-    window.onload = loadTrips;
-  </script>
-  <style>
-    body { font-family: Arial; padding: 20px; max-width: 700px; margin: auto; }
-    input, textarea { width: 100%; padding: 8px; margin: 6px 0; }
-    button { padding: 10px 20px; margin-top: 12px; }
-    .section { margin-top: 25px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Chuyến Đi</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .config-section h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+        
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .input-field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-field label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .input-field input {
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .input-field input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .trip-form {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .trips-list {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .trip-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .trip-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .trip-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .trip-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .trip-info-item {
+            font-size: 0.9em;
+        }
+        
+        .trip-info-item strong {
+            color: #495057;
+        }
+        
+        .trip-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+    </style>
 </head>
 <body>
-  <h1>Quản lý chuyến du lịch gia đình</h1>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 Quản Lý Chuyến Đi</h1>
+            <p>Hệ thống quản lý chi phí và thông tin chuyến đi</p>
+        </div>
+        
+        <div class="config-section">
+            <h3>⚙️ Cấu hình Supabase</h3>
+            <div class="input-group">
+                <div class="input-field">
+                    <label>Supabase URL</label>
+                    <input type="text" id="supabaseUrl" placeholder="https://uqexdrrmmmjtvtntavtb.supabase.co">
+                </div>
+                <div class="input-field">
+                    <label>Supabase Anon Key</label>
+                    <input type="text" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZXhkcnJtbW1qdHZ0bnRhdnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NDkyOTMsImV4cCI6MjA3OTUyNTI5M30.69ZiV6JZVbS0fWVcILLAcklSLgXieehfet_Y2T2WYzY">
+                </div>
+            </div>
+            <button class="btn" onclick="connectSupabase()">Kết nối</button>
+        </div>
+        
+        <div class="content">
+            <div class="status" id="status"></div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('trips')">Danh sách chuyến đi</button>
+                <button class="tab" onclick="switchTab('new-trip')">Tạo chuyến đi mới</button>
+                <button class="tab" onclick="switchTab('families')">Quản lý gia đình</button>
+                <button class="tab" onclick="switchTab('transport')">Vận chuyển</button>
+                <button class="tab" onclick="switchTab('daily-food')">Chi phí ăn hàng ngày</button>
+            </div>
+            
+            <div id="trips-tab" class="tab-content active">
+                <h2>📋 Danh sách chuyến đi</h2>
+                <div id="tripsList" class="trips-list loading">
+                    Vui lòng kết nối Supabase để xem dữ liệu
+                </div>
+            </div>
+            
+            <div id="new-trip-tab" class="tab-content">
+                <h2>➕ Tạo chuyến đi mới</h2>
+                <form class="trip-form" onsubmit="createTrip(event)">
+                    <div class="form-row">
+                        <div class="input-field">
+                            <label>Tên chuyến đi *</label>
+                            <input type="text" name="trip_name" required>
+                        </div>
+                        <div class="input-field">
+                            <label>Ngày bắt đầu *</label>
+                            <input type="date" name="date_from" required>
+                        </div>
+                        <div class="input-field">
+                            <label>Ngày kết thúc *</label>
+                            <input type="date" name="date_to" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-field">
+                            <label>Tổng số gia đình</label>
+                            <input type="number" name="total_families" min="0">
+                        </div>
+                        <div class="input-field">
+                            <label>Tổng số người</label>
+                            <input type="number" name="total_people" min="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-field">
+                            <label>Chi phí khách sạn/ngày</label>
+                            <input type="number" name="hotel_cost_per_day" step="0.01" min="0">
+                        </div>
+                        <div class="input-field">
+                            <label>Chi phí ăn/ngày</label>
+                            <input type="number" name="food_cost_per_day" step="0.01" min="0">
+                        </div>
+                        <div class="input-field">
+                            <label>Tổng chi phí vận chuyển</label>
+                            <input type="number" name="transport_total" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">Tạo chuyến đi</button>
+                </form>
+            </div>
+            
+            <div id="families-tab" class="tab-content">
+                <h2>👨‍👩‍👧‍👦 Quản lý gia đình</h2>
+                <p style="color: #6c757d; margin-bottom: 20px;">Chọn một chuyến đi từ danh sách để quản lý gia đình</p>
+            </div>
+            
+            <div id="transport-tab" class="tab-content">
+                <h2>🚗 Quản lý vận chuyển</h2>
+                <p style="color: #6c757d; margin-bottom: 20px;">Chọn một chuyến đi từ danh sách để quản lý vận chuyển</p>
+            </div>
+            
+            <div id="daily-food-tab" class="tab-content">
+                <h2>🍽️ Chi phí ăn hàng ngày</h2>
+                <p style="color: #6c757d; margin-bottom: 20px;">Chọn một chuyến đi từ danh sách để quản lý chi phí ăn</p>
+            </div>
+        </div>
+    </div>
 
-  <div class="section">
-    <h2>Thông tin chuyến đi</h2>
-    <label>Tên chuyến đi:</label>
-    <input type="text" id="trip_name" />
-
-    <label>Ngày đi:</label>
-    <input type="date" id="date_from" />
-
-    <label>Ngày về:</label>
-    <input type="date" id="date_to" />
-
-    <label>Tiền khách sạn / ngày:</label>
-    <input type="number" id="hotel_cost" />
-
-    <label>Tiền ăn mỗi ngày:</label>
-    <input type="number" id="food_cost" />
-  </div>
-
-  <div class="section">
-    <h2>Danh sách gia đình</h2>
-    <p>Nhập theo dạng: "Bố mẹ:2; Anh A:4; Anh B:3"</p>
-    <textarea id="families" rows="4"></textarea>
-  </div>
-
-  <div class="section">
-    <h2>Chi phí di chuyển</h2>
-    <p>Nhập theo dạng: "HCM,Đà Lạt,2000000; Đà Lạt,Chợ đêm,100000"</p>
-    <textarea id="transport" rows="4"></textarea>
-  </div>
-
-  <button onclick="saveTrip()">Lưu toàn bộ dữ liệu</button>
-
-  <div class="section">
-    <h2>Danh sách chuyến đi đã lưu</h2>
-    <div id="trip_list"></div>
-  </div>
-
+    <script>
+        let supabase = null;
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        function connectSupabase() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            
+            if (!url || !key) {
+                showStatus('Vui lòng nhập đầy đủ URL và Key', 'error');
+                return;
+            }
+            
+            try {
+                supabase = window.supabase.createClient(url, key);
+                showStatus('Kết nối Supabase thành công!', 'success');
+                loadTrips();
+            } catch (error) {
+                showStatus('Lỗi kết nối: ' + error.message, 'error');
+            }
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+        
+        async function loadTrips() {
+            if (!supabase) {
+                showStatus('Vui lòng kết nối Supabase trước', 'error');
+                return;
+            }
+            
+            const tripsList = document.getElementById('tripsList');
+            tripsList.innerHTML = '<div class="loading">Đang tải dữ liệu...</div>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('trips')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                if (data.length === 0) {
+                    tripsList.innerHTML = '<p style="text-align: center; color: #6c757d;">Chưa có chuyến đi nào. Hãy tạo chuyến đi mới!</p>';
+                    return;
+                }
+                
+                tripsList.innerHTML = data.map(trip => `
+                    <div class="trip-card">
+                        <h3>${trip.trip_name}</h3>
+                        <div class="trip-info">
+                            <div class="trip-info-item">
+                                <strong>Từ:</strong> ${new Date(trip.date_from).toLocaleDateString('vi-VN')}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>Đến:</strong> ${new Date(trip.date_to).toLocaleDateString('vi-VN')}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>Gia đình:</strong> ${trip.total_families || 0}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>Người:</strong> ${trip.total_people || 0}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>KS/ngày:</strong> ${formatMoney(trip.hotel_cost_per_day)}
+                            </div>
+                            <div class="trip-info-item">
+                                <strong>Ăn/ngày:</strong> ${formatMoney(trip.food_cost_per_day)}
+                            </div>
+                        </div>
+                        <div class="trip-actions">
+                            <button class="btn btn-small" onclick="viewTripDetails(${trip.id})">Chi tiết</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteTrip(${trip.id})">Xóa</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showStatus('Lỗi tải dữ liệu: ' + error.message, 'error');
+                tripsList.innerHTML = '<p style="text-align: center; color: #dc3545;">Không thể tải dữ liệu</p>';
+            }
+        }
+        
+        async function createTrip(event) {
+            event.preventDefault();
+            
+            if (!supabase) {
+                showStatus('Vui lòng kết nối Supabase trước', 'error');
+                return;
+            }
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const tripData = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (value === '') continue;
+                tripData[key] = ['total_families', 'total_people'].includes(key) 
+                    ? parseInt(value) 
+                    : ['hotel_cost_per_day', 'food_cost_per_day', 'transport_total'].includes(key)
+                    ? parseFloat(value)
+                    : value;
+            }
+            
+            try {
+                const { data, error } = await supabase
+                    .from('trips')
+                    .insert([tripData])
+                    .select();
+                
+                if (error) throw error;
+                
+                showStatus('Tạo chuyến đi thành công!', 'success');
+                form.reset();
+                switchTab('trips');
+                loadTrips();
+            } catch (error) {
+                showStatus('Lỗi tạo chuyến đi: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteTrip(id) {
+            if (!confirm('Bạn có chắc muốn xóa chuyến đi này?')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('trips')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showStatus('Xóa chuyến đi thành công!', 'success');
+                loadTrips();
+            } catch (error) {
+                showStatus('Lỗi xóa chuyến đi: ' + error.message, 'error');
+            }
+        }
+        
+        function viewTripDetails(id) {
+            showStatus('Tính năng xem chi tiết đang được phát triển', 'success');
+        }
+        
+        function formatMoney(value) {
+            if (!value) return '0 ₫';
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(value);
+        }
+    </script>
 </body>
 </html>
