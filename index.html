@@ -316,17 +316,10 @@
             <div class="status" id="status"></div>
             
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('trips')">Danh sách chuyến đi</button>
                 <button class="tab" onclick="switchTab('new-trip')">Tạo chuyến đi mới</button>
+                <button class="tab active" onclick="switchTab('trips')">Danh sách chuyến đi</button>
             </div>
-            
-            <div id="trips-tab" class="tab-content active">
-                <h2>📋 Danh sách chuyến đi</h2>
-                <div id="tripsList" class="trips-list loading">
-                    Đang tải dữ liệu...
-                </div>
-            </div>
-            
+                        
             <div id="new-trip-tab" class="tab-content">
                 <h2>➕ Tạo chuyến đi mới</h2>
                 <form class="trip-form" onsubmit="createTrip(event)">
@@ -370,6 +363,13 @@
                     </div>
                     <button type="submit" class="btn">Tạo chuyến đi</button>
                 </form>
+            </div>
+
+            <div id="trips-tab" class="tab-content active">
+                <h2>📋 Danh sách chuyến đi</h2>
+                <div id="tripsList" class="trips-list loading">
+                    Đang tải dữ liệu...
+                </div>
             </div>
             
             <div id="trip-detail-tab" class="tab-content">
@@ -776,3 +776,4 @@
     </script>
 </body>
 </html>
+
