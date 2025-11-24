@@ -1,381 +1,115 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Hotel, DollarSign, Clock, UtensilsCrossed, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Family Travel Planner</title>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const FamilyTripPlanner = () => {
-  const [tripInfo, setTripInfo] = useState({
-    departureDate: '',
-    returnDate: '',
-    hotelName: '',
-    hotelCost: 0
-  });
+    const supabaseUrl = "https://uqexdrrmmmjtvtntavtb.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZXhkcnJtbW1qdHZ0bnRhdnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NDkyOTMsImV4cCI6MjA3OTUyNTI5M30.69ZiV6JZVbS0fWVcILLAcklSLgXieehfet_Y2T2WYzY";
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const [families, setFamilies] = useState([
-    { id: 1, name: 'Gia đình Bố Mẹ', members: 2 },
-  ]);
+    async function saveTrip() {
+      const trip = {
+        trip_name: document.getElementById("trip_name").value,
+        date_from: document.getElementById("date_from").value,
+        date_to: document.getElementById("date_to").value,
+        hotel_cost_per_day: document.getElementById("hotel_cost").value,
+        food_cost_per_day: document.getElementById("food_cost").value,
+      };
 
-  const [schedule, setSchedule] = useState([]);
-  
-  const [editingFamily, setEditingFamily] = useState(null);
-  const [editingSchedule, setEditingSchedule] = useState(null);
-  const [newFamily, setNewFamily] = useState({ name: '', members: 1 });
-  const [newScheduleItem, setNewScheduleItem] = useState({
-    day: 1,
-    time: '',
-    activity: '',
-    mealCost: 0,
-    type: 'meal'
-  });
+      const { data: tripData, error: tripErr } = await supabase
+        .from("trips").insert(trip).select();
+      if (tripErr) return alert("Lỗi lưu trip: " + tripErr.message);
 
-  const [showFamilyForm, setShowFamilyForm] = useState(false);
-  const [showScheduleForm, setShowScheduleForm] = useState(false);
+      const tripId = tripData[0].id;
 
-  const totalMembers = families.reduce((sum, fam) => sum + fam.members, 0);
-  const totalDays = tripInfo.departureDate && tripInfo.returnDate 
-    ? Math.ceil((new Date(tripInfo.returnDate) - new Date(tripInfo.departureDate)) / (1000 * 60 * 60 * 24)) + 1
-    : 0;
-  
-  const totalMealCost = schedule.reduce((sum, item) => sum + (item.mealCost * totalMembers), 0);
-  const totalCost = Number(tripInfo.hotelCost) + totalMealCost;
+      const familiesText = document.getElementById("families").value.split(";");
+      const families = familiesText.map(f => {
+        const p = f.split(":");
+        return { trip_id: tripId, family_name: p[0], total_people: Number(p[1]) };
+      });
 
-  const addFamily = () => {
-    if (newFamily.name && newFamily.members > 0) {
-      setFamilies([...families, { ...newFamily, id: Date.now() }]);
-      setNewFamily({ name: '', members: 1 });
-      setShowFamilyForm(false);
+      await supabase.from("families").insert(families);
+
+      const transportText = document.getElementById("transport").value.split(";");
+      const transport = transportText.map(t => {
+        const p = t.split(",");
+        return {
+          trip_id: tripId,
+          from_location: p[0],
+          to_location: p[1],
+          cost: Number(p[2])
+        };
+      });
+
+      await supabase.from("transport").insert(transport);
+
+      alert("Đã lưu đầy đủ thông tin chuyến đi!");
     }
-  };
 
-  const deleteFamily = (id) => {
-    setFamilies(families.filter(f => f.id !== id));
-  };
-
-  const updateFamily = (id, updates) => {
-    setFamilies(families.map(f => f.id === id ? { ...f, ...updates } : f));
-    setEditingFamily(null);
-  };
-
-  const addScheduleItem = () => {
-    if (newScheduleItem.time && newScheduleItem.activity) {
-      setSchedule([...schedule, { ...newScheduleItem, id: Date.now() }]);
-      setNewScheduleItem({ day: 1, time: '', activity: '', mealCost: 0, type: 'meal' });
-      setShowScheduleForm(false);
+    async function loadTrips() {
+      const { data, error } = await supabase.from("trips").select();
+      if (error) return;
+      const list = document.getElementById("trip_list");
+      list.innerHTML = "";
+      data.forEach(t => {
+        const item = document.createElement("div");
+        item.innerHTML = `<b>${t.trip_name}</b> — ${t.date_from} → ${t.date_to}`;
+        list.appendChild(item);
+      });
     }
-  };
 
-  const deleteScheduleItem = (id) => {
-    setSchedule(schedule.filter(s => s.id !== id));
-  };
+    window.onload = loadTrips;
+  </script>
+  <style>
+    body { font-family: Arial; padding: 20px; max-width: 700px; margin: auto; }
+    input, textarea { width: 100%; padding: 8px; margin: 6px 0; }
+    button { padding: 10px 20px; margin-top: 12px; }
+    .section { margin-top: 25px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Quản lý chuyến du lịch gia đình</h1>
 
-  const updateScheduleItem = (id, updates) => {
-    setSchedule(schedule.map(s => s.id === id ? { ...s, ...updates } : s));
-    setEditingSchedule(null);
-  };
+  <div class="section">
+    <h2>Thông tin chuyến đi</h2>
+    <label>Tên chuyến đi:</label>
+    <input type="text" id="trip_name" />
 
-  const scheduleByDay = {};
-  schedule.forEach(item => {
-    if (!scheduleByDay[item.day]) scheduleByDay[item.day] = [];
-    scheduleByDay[item.day].push(item);
-  });
+    <label>Ngày đi:</label>
+    <input type="date" id="date_from" />
 
-  Object.keys(scheduleByDay).forEach(day => {
-    scheduleByDay[day].sort((a, b) => a.time.localeCompare(b.time));
-  });
+    <label>Ngày về:</label>
+    <input type="date" id="date_to" />
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 mb-6">
-          <h1 className="text-4xl font-bold text-indigo-900 mb-2 flex items-center gap-3">
-            <Calendar className="w-10 h-10" />
-            Kế Hoạch Du Lịch Gia Đình
-          </h1>
-          <p className="text-gray-600 mb-6">Lên kế hoạch chi tiết cho chuyến đi của gia đình bạn</p>
+    <label>Tiền khách sạn / ngày:</label>
+    <input type="number" id="hotel_cost" />
 
-          {/* Thông tin chuyến đi */}
-          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-6 mb-6">
-            <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
-              <Hotel className="w-6 h-6" />
-              Thông Tin Chuyến Đi
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày đi</label>
-                <input
-                  type="date"
-                  value={tripInfo.departureDate}
-                  onChange={(e) => setTripInfo({ ...tripInfo, departureDate: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg focus:border-indigo-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày về</label>
-                <input
-                  type="date"
-                  value={tripInfo.returnDate}
-                  onChange={(e) => setTripInfo({ ...tripInfo, returnDate: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg focus:border-indigo-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Tên khách sạn</label>
-                <input
-                  type="text"
-                  value={tripInfo.hotelName}
-                  onChange={(e) => setTripInfo({ ...tripInfo, hotelName: e.target.value })}
-                  placeholder="Ví dụ: Khách sạn Mường Thanh"
-                  className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg focus:border-indigo-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Chi phí khách sạn (VNĐ)</label>
-                <input
-                  type="number"
-                  value={tripInfo.hotelCost}
-                  onChange={(e) => setTripInfo({ ...tripInfo, hotelCost: Number(e.target.value) })}
-                  placeholder="0"
-                  className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg focus:border-indigo-500 focus:outline-none"
-                />
-              </div>
-            </div>
-            {totalDays > 0 && (
-              <div className="mt-4 text-indigo-700 font-semibold">
-                ⏰ Tổng số ngày: {totalDays} ngày
-              </div>
-            )}
-          </div>
+    <label>Tiền ăn mỗi ngày:</label>
+    <input type="number" id="food_cost" />
+  </div>
 
-          {/* Thành viên gia đình */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 mb-6">
-            <h2 className="text-2xl font-bold text-green-800 mb-4 flex items-center gap-2">
-              <Users className="w-6 h-6" />
-              Thành Viên Gia Đình
-            </h2>
-            <div className="space-y-3 mb-4">
-              {families.map(family => (
-                <div key={family.id} className="bg-white rounded-lg p-4 flex items-center justify-between shadow">
-                  {editingFamily === family.id ? (
-                    <div className="flex gap-3 flex-1">
-                      <input
-                        type="text"
-                        value={family.name}
-                        onChange={(e) => setFamilies(families.map(f => f.id === family.id ? { ...f, name: e.target.value } : f))}
-                        className="flex-1 px-3 py-2 border-2 border-green-300 rounded-lg"
-                      />
-                      <input
-                        type="number"
-                        value={family.members}
-                        onChange={(e) => setFamilies(families.map(f => f.id === family.id ? { ...f, members: Number(e.target.value) } : f))}
-                        min="1"
-                        className="w-24 px-3 py-2 border-2 border-green-300 rounded-lg"
-                      />
-                      <button onClick={() => setEditingFamily(null)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                        <Save className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div>
-                        <p className="font-semibold text-gray-800">{family.name}</p>
-                        <p className="text-sm text-gray-600">{family.members} người</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setEditingFamily(family.id)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => deleteFamily(family.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            {showFamilyForm ? (
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="flex gap-3 mb-3">
-                  <input
-                    type="text"
-                    value={newFamily.name}
-                    onChange={(e) => setNewFamily({ ...newFamily, name: e.target.value })}
-                    placeholder="Tên gia đình"
-                    className="flex-1 px-3 py-2 border-2 border-green-300 rounded-lg"
-                  />
-                  <input
-                    type="number"
-                    value={newFamily.members}
-                    onChange={(e) => setNewFamily({ ...newFamily, members: Number(e.target.value) })}
-                    min="1"
-                    placeholder="Số người"
-                    className="w-32 px-3 py-2 border-2 border-green-300 rounded-lg"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={addFamily} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
-                    <Save className="w-4 h-4" /> Lưu
-                  </button>
-                  <button onClick={() => setShowFamilyForm(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
-                    Hủy
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => setShowFamilyForm(true)} className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold">
-                <Plus className="w-5 h-5" /> Thêm Gia Đình
-              </button>
-            )}
-            
-            <div className="mt-4 text-green-700 font-semibold">
-              👥 Tổng số người: {totalMembers} người
-            </div>
-          </div>
+  <div class="section">
+    <h2>Danh sách gia đình</h2>
+    <p>Nhập theo dạng: "Bố mẹ:2; Anh A:4; Anh B:3"</p>
+    <textarea id="families" rows="4"></textarea>
+  </div>
 
-          {/* Lịch trình */}
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 mb-6">
-            <h2 className="text-2xl font-bold text-orange-800 mb-4 flex items-center gap-2">
-              <Clock className="w-6 h-6" />
-              Lịch Trình Chi Tiết
-            </h2>
+  <div class="section">
+    <h2>Chi phí di chuyển</h2>
+    <p>Nhập theo dạng: "HCM,Đà Lạt,2000000; Đà Lạt,Chợ đêm,100000"</p>
+    <textarea id="transport" rows="4"></textarea>
+  </div>
 
-            {Object.keys(scheduleByDay).length > 0 ? (
-              <div className="space-y-4 mb-4">
-                {Object.keys(scheduleByDay).sort((a, b) => a - b).map(day => (
-                  <div key={day} className="bg-white rounded-lg p-4 shadow">
-                    <h3 className="font-bold text-lg text-orange-700 mb-3">Ngày {day}</h3>
-                    <div className="space-y-2">
-                      {scheduleByDay[day].map(item => (
-                        <div key={item.id} className="flex items-start justify-between bg-orange-50 rounded-lg p-3">
-                          {editingSchedule === item.id ? (
-                            <div className="flex-1 grid grid-cols-2 gap-2">
-                              <input type="time" value={item.time} onChange={(e) => setSchedule(schedule.map(s => s.id === item.id ? { ...s, time: e.target.value } : s))} className="px-2 py-1 border rounded" />
-                              <input type="text" value={item.activity} onChange={(e) => setSchedule(schedule.map(s => s.id === item.id ? { ...s, activity: e.target.value } : s))} className="px-2 py-1 border rounded" placeholder="Hoạt động" />
-                              <input type="number" value={item.mealCost} onChange={(e) => setSchedule(schedule.map(s => s.id === item.id ? { ...s, mealCost: Number(e.target.value) } : s))} className="px-2 py-1 border rounded" placeholder="Chi phí/người" />
-                              <button onClick={() => setEditingSchedule(null)} className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700">
-                                <Save className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3">
-                                  <span className="font-semibold text-orange-800">{item.time}</span>
-                                  {item.type === 'meal' ? <UtensilsCrossed className="w-4 h-4 text-orange-600" /> : <Clock className="w-4 h-4 text-blue-600" />}
-                                  <span className="text-gray-800">{item.activity}</span>
-                                </div>
-                                {item.mealCost > 0 && (
-                                  <p className="text-sm text-gray-600 mt-1 ml-16">
-                                    💰 {item.mealCost.toLocaleString()}đ/người × {totalMembers} người = {(item.mealCost * totalMembers).toLocaleString()}đ
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex gap-2">
-                                <button onClick={() => setEditingSchedule(item.id)} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => deleteScheduleItem(item.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4 mb-4">Chưa có lịch trình nào</p>
-            )}
+  <button onclick="saveTrip()">Lưu toàn bộ dữ liệu</button>
 
-            {showScheduleForm ? (
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <input
-                    type="number"
-                    value={newScheduleItem.day}
-                    onChange={(e) => setNewScheduleItem({ ...newScheduleItem, day: Number(e.target.value) })}
-                    min="1"
-                    placeholder="Ngày"
-                    className="px-3 py-2 border-2 border-orange-300 rounded-lg"
-                  />
-                  <input
-                    type="time"
-                    value={newScheduleItem.time}
-                    onChange={(e) => setNewScheduleItem({ ...newScheduleItem, time: e.target.value })}
-                    className="px-3 py-2 border-2 border-orange-300 rounded-lg"
-                  />
-                  <input
-                    type="text"
-                    value={newScheduleItem.activity}
-                    onChange={(e) => setNewScheduleItem({ ...newScheduleItem, activity: e.target.value })}
-                    placeholder="Hoạt động (ví dụ: Ăn sáng)"
-                    className="col-span-2 px-3 py-2 border-2 border-orange-300 rounded-lg"
-                  />
-                  <input
-                    type="number"
-                    value={newScheduleItem.mealCost}
-                    onChange={(e) => setNewScheduleItem({ ...newScheduleItem, mealCost: Number(e.target.value) })}
-                    placeholder="Chi phí/người (VNĐ)"
-                    className="px-3 py-2 border-2 border-orange-300 rounded-lg"
-                  />
-                  <select
-                    value={newScheduleItem.type}
-                    onChange={(e) => setNewScheduleItem({ ...newScheduleItem, type: e.target.value })}
-                    className="px-3 py-2 border-2 border-orange-300 rounded-lg"
-                  >
-                    <option value="meal">Ăn uống</option>
-                    <option value="activity">Hoạt động</option>
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={addScheduleItem} className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center gap-2">
-                    <Save className="w-4 h-4" /> Lưu
-                  </button>
-                  <button onClick={() => setShowScheduleForm(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
-                    Hủy
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => setShowScheduleForm(true)} className="w-full px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2 font-semibold">
-                <Plus className="w-5 h-5" /> Thêm Lịch Trình
-              </button>
-            )}
-          </div>
+  <div class="section">
+    <h2>Danh sách chuyến đi đã lưu</h2>
+    <div id="trip_list"></div>
+  </div>
 
-          {/* Tổng kết chi phí */}
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-purple-800 mb-4 flex items-center gap-2">
-              <DollarSign className="w-6 h-6" />
-              Tổng Kết Chi Phí
-            </h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center bg-white rounded-lg p-3">
-                <span className="text-gray-700">Chi phí khách sạn:</span>
-                <span className="font-semibold text-purple-700">{tripInfo.hotelCost.toLocaleString()} VNĐ</span>
-              </div>
-              <div className="flex justify-between items-center bg-white rounded-lg p-3">
-                <span className="text-gray-700">Chi phí ăn uống:</span>
-                <span className="font-semibold text-purple-700">{totalMealCost.toLocaleString()} VNĐ</span>
-              </div>
-              <div className="flex justify-between items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg p-4">
-                <span className="text-lg font-bold">TỔNG CHI PHÍ:</span>
-                <span className="text-2xl font-bold">{totalCost.toLocaleString()} VNĐ</span>
-              </div>
-              {totalMembers > 0 && (
-                <div className="flex justify-between items-center bg-white rounded-lg p-3">
-                  <span className="text-gray-700">Trung bình/người:</span>
-                  <span className="font-semibold text-purple-700">{Math.round(totalCost / totalMembers).toLocaleString()} VNĐ</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default FamilyTripPlanner;
+</body>
+</html>
