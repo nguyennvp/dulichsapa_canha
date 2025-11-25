@@ -9,123 +9,187 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        .family-header {
+            background-image: url('https://images.unsplash.com/photo-1511895426328-dc8714191300?w=1200');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+        .family-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .family-header-content {
+            position: relative;
+            z-index: 1;
+        }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h1 class="text-4xl font-bold text-indigo-600 text-center mb-2">
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <!-- Header với background ảnh gia đình -->
+    <div class="family-header h-64 md:h-80 flex items-center justify-center">
+        <div class="family-header-content text-center text-white px-4">
+            <h1 class="text-5xl md:text-6xl font-bold mb-4 drop-shadow-lg">
                 🏔️ Cả Nhà Mình Đi Du Lịch Sa Pa 🏔️
             </h1>
-            <p class="text-center text-gray-600">Kế hoạch chi tiết cho chuyến đi gia đình</p>
-            <div class="flex justify-end mt-4">
-                <button onclick="saveTrip()" id="saveBtn" class="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+            <p class="text-xl md:text-2xl drop-shadow-md">Những kỷ niệm đáng nhớ bên gia đình</p>
+            <p class="text-sm mt-2 opacity-90">💡 Tip: Nhấp vào header này để thay đổi ảnh nền của bạn</p>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto p-4 -mt-16">
+        <!-- Main Card -->
+        <div class="bg-white rounded-lg shadow-2xl p-6 mb-6">
+            <p class="text-center text-gray-600 mb-4">Kế hoạch chi tiết cho chuyến đi gia đình</p>
+
+            <!-- Phần 1: Thông tin chung -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-indigo-500 pb-2">
+                    📅 Phần 1: Thông tin chung
+                </h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Ngày tháng -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngày bắt đầu
+                            </label>
+                            <input type="date" id="startDate" onchange="updateDays()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngày kết thúc
+                            </label>
+                            <input type="date" id="endDate" onchange="updateDays()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-lg">
+                            <p class="text-lg font-semibold text-indigo-700">
+                                Tổng số ngày: <span id="totalDays" class="text-2xl">0</span> ngày
+                            </p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                (<span id="totalNights">0</span> đêm)
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Số người -->
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    👥 Người lớn
+                                </label>
+                                <input type="number" id="adults" value="2" min="0" onchange="updateCosts()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    👶 Trẻ em
+                                </label>
+                                <input type="number" id="children" value="0" min="0" onchange="updateCosts()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                🏨 Chi phí khách sạn/ngày (VNĐ)
+                            </label>
+                            <input type="number" id="hotelCostPerDay" value="0" onchange="updateCosts()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <p class="text-sm text-gray-600 mt-1">
+                                Tổng: <span id="totalHotelCost">0 ₫</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chi phí di chuyển -->
+                <div class="mt-6 grid md:grid-cols-2 gap-6">
+                    <!-- Vé máy bay -->
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-bold text-blue-700 mb-3">✈️ Vé máy bay</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Người lớn (VNĐ)
+                                </label>
+                                <input type="number" id="flightAdult" value="0" onchange="updateCosts()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Trẻ em (VNĐ)
+                                </label>
+                                <input type="number" id="flightChild" value="0" onchange="updateCosts()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="mt-3 bg-blue-100 p-2 rounded">
+                            <p class="text-sm font-semibold text-blue-800">
+                                Tổng vé máy bay: <span id="totalFlight">0 ₫</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Vé xe giường nằm -->
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-700 mb-3">🚌 Xe giường nằm (Nội Bài - Sa Pa)</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Người lớn (VNĐ)
+                                </label>
+                                <input type="number" id="busAdult" value="0" onchange="updateCosts()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Trẻ em (VNĐ)
+                                </label>
+                                <input type="number" id="busChild" value="0" onchange="updateCosts()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            </div>
+                        </div>
+                        <div class="mt-3 bg-green-100 p-2 rounded">
+                            <p class="text-sm font-semibold text-green-800">
+                                Tổng vé xe: <span id="totalBus">0 ₫</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tổng chi phí -->
+                <div class="mt-6 bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-6 rounded-lg">
+                    <h3 class="text-xl font-bold mb-2">💰 Tổng chi phí dự kiến</h3>
+                    <p class="text-3xl font-bold" id="grandTotal">0 ₫</p>
+                    <div class="mt-3 text-sm opacity-90 space-y-1">
+                        <p>• Khách sạn: <span id="summaryHotel">0 ₫</span></p>
+                        <p>• Vé máy bay: <span id="summaryFlight">0 ₫</span></p>
+                        <p>• Xe giường nằm: <span id="summaryBus">0 ₫</span></p>
+                        <p class="text-xs mt-2 opacity-75">(Chưa bao gồm chi phí hoạt động hàng ngày)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phần 2: Chi tiết kế hoạch -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-indigo-500 pb-2">
+                    📝 Phần 2: Chi tiết kế hoạch theo ngày
+                </h2>
+
+                <div id="dailyPlans">
+                    <p class="text-gray-500 text-center py-8">
+                        Vui lòng chọn ngày bắt đầu và kết thúc để xem kế hoạch chi tiết
+                    </p>
+                </div>
+            </div>
+
+            <!-- Nút lưu ở dưới cùng -->
+            <div class="flex justify-center pt-6 border-t-2 border-gray-200">
+                <button onclick="saveTrip()" id="saveBtn" class="flex items-center gap-2 bg-green-500 text-white px-8 py-3 rounded-lg hover:bg-green-600 transition shadow-lg text-lg font-semibold">
                     <span>💾</span> Lưu kế hoạch
                 </button>
-            </div>
-        </div>
-
-        <!-- Phần 1: Thông tin chung -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                📅 Phần 1: Thông tin chung
-            </h2>
-            
-            <div class="grid md:grid-cols-2 gap-6">
-                <!-- Ngày tháng -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Ngày bắt đầu
-                        </label>
-                        <input type="date" id="startDate" onchange="updateDays()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Ngày kết thúc
-                        </label>
-                        <input type="date" id="endDate" onchange="updateDays()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    <div class="bg-indigo-50 p-4 rounded-lg">
-                        <p class="text-lg font-semibold text-indigo-700">
-                            Tổng số ngày: <span id="totalDays" class="text-2xl">0</span> ngày
-                        </p>
-                        <p class="text-sm text-gray-600 mt-1">
-                            (<span id="totalNights">0</span> đêm)
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Số người và chi phí -->
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                👥 Người lớn
-                            </label>
-                            <input type="number" id="adults" value="2" min="0" onchange="updateCosts()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                👶 Trẻ em
-                            </label>
-                            <input type="number" id="children" value="0" min="0" onchange="updateCosts()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Chi phí khách sạn/ngày (VNĐ)
-                        </label>
-                        <input type="number" id="hotelCostPerDay" value="0" onchange="updateCosts()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        <p class="text-sm text-gray-600 mt-1">
-                            Tổng: <span id="totalHotelCost">0 ₫</span>
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Vé người lớn (VNĐ)
-                            </label>
-                            <input type="number" id="adultTicket" value="0" onchange="updateCosts()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Vé trẻ em (VNĐ)
-                            </label>
-                            <input type="number" id="childTicket" value="0" onchange="updateCosts()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                    </div>
-                    <div class="bg-green-50 p-4 rounded-lg">
-                        <p class="text-lg font-semibold text-green-700">
-                            Tổng vé di chuyển: <span id="totalTicketCost">0 ₫</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tổng chi phí -->
-            <div class="mt-6 bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-6 rounded-lg">
-                <h3 class="text-xl font-bold mb-2">Tổng chi phí dự kiến</h3>
-                <p class="text-3xl font-bold" id="grandTotal">0 ₫</p>
-                <p class="text-sm mt-2 opacity-90">
-                    (Chưa bao gồm chi phí hoạt động hàng ngày)
-                </p>
-            </div>
-        </div>
-
-        <!-- Phần 2: Chi tiết kế hoạch -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                💰 Phần 2: Chi tiết kế hoạch theo ngày
-            </h2>
-
-            <div id="dailyPlans">
-                <p class="text-gray-500 text-center py-8">
-                    Vui lòng chọn ngày bắt đầu và kết thúc để xem kế hoạch chi tiết
-                </p>
             </div>
         </div>
     </div>
@@ -163,8 +227,10 @@
                         document.getElementById('adults').value = trip.general_info.adults || 2;
                         document.getElementById('children').value = trip.general_info.children || 0;
                         document.getElementById('hotelCostPerDay').value = trip.general_info.hotelCostPerDay || 0;
-                        document.getElementById('adultTicket').value = trip.general_info.adultTicketCost || 0;
-                        document.getElementById('childTicket').value = trip.general_info.childTicketCost || 0;
+                        document.getElementById('flightAdult').value = trip.general_info.flightAdult || 0;
+                        document.getElementById('flightChild').value = trip.general_info.flightChild || 0;
+                        document.getElementById('busAdult').value = trip.general_info.busAdult || 0;
+                        document.getElementById('busChild').value = trip.general_info.busChild || 0;
                         
                         // Load daily plans
                         dailyActivities = trip.daily_plans || {};
@@ -189,8 +255,10 @@
                 adults: parseInt(document.getElementById('adults').value) || 0,
                 children: parseInt(document.getElementById('children').value) || 0,
                 hotelCostPerDay: parseFloat(document.getElementById('hotelCostPerDay').value) || 0,
-                adultTicketCost: parseFloat(document.getElementById('adultTicket').value) || 0,
-                childTicketCost: parseFloat(document.getElementById('childTicket').value) || 0
+                flightAdult: parseFloat(document.getElementById('flightAdult').value) || 0,
+                flightChild: parseFloat(document.getElementById('flightChild').value) || 0,
+                busAdult: parseFloat(document.getElementById('busAdult').value) || 0,
+                busChild: parseFloat(document.getElementById('busChild').value) || 0
             };
 
             const tripData = {
@@ -278,16 +346,23 @@
             const hotelCostPerDay = parseFloat(document.getElementById('hotelCostPerDay').value) || 0;
             const adults = parseInt(document.getElementById('adults').value) || 0;
             const children = parseInt(document.getElementById('children').value) || 0;
-            const adultTicket = parseFloat(document.getElementById('adultTicket').value) || 0;
-            const childTicket = parseFloat(document.getElementById('childTicket').value) || 0;
+            const flightAdult = parseFloat(document.getElementById('flightAdult').value) || 0;
+            const flightChild = parseFloat(document.getElementById('flightChild').value) || 0;
+            const busAdult = parseFloat(document.getElementById('busAdult').value) || 0;
+            const busChild = parseFloat(document.getElementById('busChild').value) || 0;
             
             const totalHotelCost = nights * hotelCostPerDay;
-            const totalTicketCost = (adults * adultTicket) + (children * childTicket);
-            const grandTotal = totalHotelCost + totalTicketCost;
+            const totalFlightCost = (adults * flightAdult) + (children * flightChild);
+            const totalBusCost = (adults * busAdult) + (children * busChild);
+            const grandTotal = totalHotelCost + totalFlightCost + totalBusCost;
             
             document.getElementById('totalHotelCost').textContent = formatCurrency(totalHotelCost);
-            document.getElementById('totalTicketCost').textContent = formatCurrency(totalTicketCost);
+            document.getElementById('totalFlight').textContent = formatCurrency(totalFlightCost);
+            document.getElementById('totalBus').textContent = formatCurrency(totalBusCost);
             document.getElementById('grandTotal').textContent = formatCurrency(grandTotal);
+            document.getElementById('summaryHotel').textContent = formatCurrency(totalHotelCost);
+            document.getElementById('summaryFlight').textContent = formatCurrency(totalFlightCost);
+            document.getElementById('summaryBus').textContent = formatCurrency(totalBusCost);
         }
 
         function renderDailyPlans() {
@@ -307,9 +382,9 @@
             
             for (let day = 1; day <= days; day++) {
                 html += `
-                    <div class="border-2 border-indigo-200 rounded-lg p-4">
+                    <div class="border-2 border-indigo-200 rounded-lg p-4 bg-gradient-to-r from-indigo-50 to-purple-50">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-bold text-indigo-600">Ngày ${day}</h3>
+                            <h3 class="text-xl font-bold text-indigo-600">📍 Ngày ${day}</h3>
                             <button onclick="addActivity(${day})" class="flex items-center gap-2 bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition">
                                 <span>➕</span> Thêm hoạt động
                             </button>
@@ -325,9 +400,9 @@
                 
                 html += `
                         </div>
-                        <div class="mt-4 bg-indigo-50 p-3 rounded-lg">
+                        <div class="mt-4 bg-indigo-100 p-3 rounded-lg border-l-4 border-indigo-500">
                             <p class="text-lg font-semibold text-indigo-700">
-                                Tổng chi phí ngày ${day}: <span id="day-${day}-total">${formatCurrency(calculateDayTotal(day))}</span>
+                                💵 Tổng chi phí ngày ${day}: <span id="day-${day}-total">${formatCurrency(calculateDayTotal(day))}</span>
                             </p>
                         </div>
                     </div>
@@ -340,7 +415,7 @@
 
         function renderActivity(day, index, activity) {
             return `
-                <div class="grid grid-cols-12 gap-2 bg-gray-50 p-3 rounded-lg">
+                <div class="grid grid-cols-12 gap-2 bg-white p-3 rounded-lg shadow-sm">
                     <input type="time" value="${activity.time || ''}" onchange="updateActivity(${day}, ${index}, 'time', this.value)" class="col-span-2 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" placeholder="Thời gian">
                     <input type="text" value="${activity.info || ''}" onchange="updateActivity(${day}, ${index}, 'info', this.value)" class="col-span-4 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" placeholder="Thông tin hoạt động">
                     <input type="text" value="${activity.note || ''}" onchange="updateActivity(${day}, ${index}, 'note', this.value)" class="col-span-3 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" placeholder="Ghi chú">
