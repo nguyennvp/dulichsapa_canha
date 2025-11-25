@@ -1,876 +1,409 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Chuyến Đi</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&h=400&fit=crop') center/cover;
-            opacity: 0.2;
-            z-index: 0;
-        }
-        
-        .header h1, .header p {
-            position: relative;
-            z-index: 1;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .content {
-            padding: 30px;
-            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e9ecef;
-            flex-wrap: wrap;
-        }
-        
-        .tab {
-            padding: 12px 24px;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            color: #6c757d;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        
-        .tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-            font-weight: 600;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .trip-form {
-            display: grid;
-            gap: 20px;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        .input-field {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .input-field label {
-            font-size: 0.9em;
-            color: #6c757d;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        .input-field input, .input-field textarea {
-            padding: 10px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-            font-family: inherit;
-        }
-        
-        .input-field textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-        
-        .input-field input:focus, .input-field textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            font-weight: 600;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .btn-small {
-            padding: 8px 16px;
-            font-size: 0.9em;
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            color: #333;
-        }
-        
-        .trips-list {
-            display: grid;
-            gap: 20px;
-        }
-        
-        .trip-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            border-left: 5px solid #667eea;
-            transition: transform 0.2s, box-shadow 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .trip-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 150px;
-            height: 150px;
-            background: url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=200&h=200&fit=crop') center/cover;
-            opacity: 0.1;
-            border-radius: 50%;
-            transform: translate(30%, -30%);
-        }
-        
-        .trip-card:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .trip-card h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        
-        .trip-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        .trip-info-item {
-            font-size: 0.9em;
-        }
-        
-        .trip-info-item strong {
-            color: #495057;
-        }
-        
-        .trip-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .status {
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
-        
-        .empty-state::before {
-            content: '✈️';
-            display: block;
-            font-size: 80px;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-        
-        .trip-detail-section h3 {
-            color: #495057;
-            margin-bottom: 15px;
-            padding: 15px;
-            border-bottom: 2px solid #e9ecef;
-            background: linear-gradient(90deg, #f8f9fa 0%, transparent 100%);
-            border-radius: 8px;
-        }
-        
-        .daily-schedule {
-            margin-top: 20px;
-        }
-        
-        .day-card {
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .day-card::after {
-            content: '';
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 120px;
-            height: 120px;
-            background: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=150&h=150&fit=crop') center/cover;
-            opacity: 0.08;
-            border-radius: 8px;
-            pointer-events: none;
-        }
-        
-        .day-card h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .day-card-content {
-            display: grid;
-            gap: 15px;
-        }
-        
-        .expense-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-        }
-        
-        .trip-detail-section {
-            margin-bottom: 30px;
-        }
-        
-        .trip-detail-section h3 {
-            color: #495057;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e9ecef;
-        }
-        
-        .back-button {
-            margin-bottom: 20px;
-        }
-        
-        .summary-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .summary-box::before {
-            content: '';
-            position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 200px;
-            height: 200px;
-            background: url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=300&h=300&fit=crop') center/cover;
-            opacity: 0.15;
-            border-radius: 50%;
-        }
-        
-        .summary-box h2 {
-            position: relative;
-            z-index: 1;
-        }
-        
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .summary-item {
-            background: rgba(255,255,255,0.2);
-            padding: 15px;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .summary-item strong {
-            display: block;
-            font-size: 0.9em;
-            margin-bottom: 5px;
-        }
-        
-        .summary-item span {
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🌍 Quản Lý Chuyến Đi</h1>
-            <p>Hệ thống quản lý chi phí và kế hoạch chuyến đi chi tiết</p>
-        </div>
-        
-        <div class="content">
-            <div class="status" id="status"></div>
-            
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('trips')">Danh sách chuyến đi</button>
-                <button class="tab" onclick="switchTab('new-trip')">Tạo chuyến đi mới</button>
-            </div>
-            
-            <div id="trips-tab" class="tab-content active">
-                <h2>📋 Danh sách chuyến đi</h2>
-                <div id="tripsList" class="trips-list loading">
-                    Đang tải dữ liệu...
-                </div>
-            </div>
-            
-            <div id="new-trip-tab" class="tab-content">
-                <h2>➕ Tạo chuyến đi mới</h2>
-                <form class="trip-form" onsubmit="createTrip(event)">
-                    <div class="form-row">
-                        <div class="input-field">
-                            <label>Tên chuyến đi *</label>
-                            <input type="text" name="trip_name" required>
-                        </div>
-                        <div class="input-field">
-                            <label>Ngày bắt đầu *</label>
-                            <input type="date" name="date_from" required>
-                        </div>
-                        <div class="input-field">
-                            <label>Ngày kết thúc *</label>
-                            <input type="date" name="date_to" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="input-field">
-                            <label>Tổng số gia đình</label>
-                            <input type="number" name="total_families" min="0">
-                        </div>
-                        <div class="input-field">
-                            <label>Tổng số người</label>
-                            <input type="number" name="total_people" min="0">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="input-field">
-                            <label>Chi phí khách sạn/ngày</label>
-                            <input type="number" name="hotel_cost_per_day" step="0.01" min="0">
-                        </div>
-                        <div class="input-field">
-                            <label>Chi phí ăn/ngày (ước tính)</label>
-                            <input type="number" name="food_cost_per_day" step="0.01" min="0">
-                        </div>
-                        <div class="input-field">
-                            <label>Tổng chi phí vận chuyển</label>
-                            <input type="number" name="transport_total" step="0.01" min="0">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn">Tạo chuyến đi</button>
-                </form>
-            </div>
-            
-            <div id="trip-detail-tab" class="tab-content">
-                <button class="btn btn-small back-button" onclick="backToList()">← Quay lại danh sách</button>
-                <div id="tripDetailContent"></div>
-            </div>
-        </div>
-    </div>
+import React, { useState, useEffect } from 'react';
+import { Calendar, Users, DollarSign, Plus, Trash2, Save } from 'lucide-react';
 
-    <script>
-        // Cấu hình Supabase cố định
-        const SUPABASE_URL = 'https://uqexdrrmmmjtvtntavtb.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZXhkcnJtbW1qdHZ0bnRhdnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NDkyOTMsImV4cCI6MjA3OTUyNTI5M30.69ZiV6JZVbS0fWVcILLAcklSLgXieehfet_Y2T2WYzY';
-        
-        let supabase = null;
-        let currentTrip = null;
-        
-        // Khởi tạo Supabase khi tải trang
-        window.addEventListener('DOMContentLoaded', () => {
-            try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                loadTrips();
-            } catch (error) {
-                showStatus('Lỗi kết nối Supabase: ' + error.message, 'error');
-            }
+const SapaFamilyTrip = () => {
+  const SUPABASE_URL = 'https://uqexdrrmmmjtvtntavtb.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZXhkcnJtbW1qdHZ0bnRhdnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NDkyOTMsImV4cCI6MjA3OTUyNTI5M30.69ZiV6JZVbS0fWVcILLAcklSLgXieehfet_Y2T2WYzY';
+
+  const [generalInfo, setGeneralInfo] = useState({
+    startDate: '',
+    endDate: '',
+    adults: 2,
+    children: 0,
+    hotelCostPerDay: 0,
+    adultTicketCost: 0,
+    childTicketCost: 0
+  });
+
+  const [dailyPlans, setDailyPlans] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [loadedTrip, setLoadedTrip] = useState(null);
+
+  // Load data from Supabase on mount
+  useEffect(() => {
+    loadTrip();
+  }, []);
+
+  const loadTrip = async () => {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/trips?order=created_at.desc&limit=1`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const trip = data[0];
+          setGeneralInfo(trip.general_info);
+          setDailyPlans(trip.daily_plans || {});
+          setLoadedTrip(trip);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading trip:', error);
+    }
+  };
+
+  const saveTrip = async () => {
+    setSaving(true);
+    try {
+      const tripData = {
+        general_info: generalInfo,
+        daily_plans: dailyPlans,
+        updated_at: new Date().toISOString()
+      };
+
+      let response;
+      if (loadedTrip) {
+        // Update existing trip
+        response = await fetch(`${SUPABASE_URL}/rest/v1/trips?id=eq.${loadedTrip.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(tripData)
         });
-        
-        function showStatus(message, type) {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = `status ${type}`;
-            status.style.display = 'block';
-            setTimeout(() => {
-                status.style.display = 'none';
-            }, 5000);
+      } else {
+        // Create new trip
+        response = await fetch(`${SUPABASE_URL}/rest/v1/trips`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            ...tripData,
+            created_at: new Date().toISOString()
+          })
+        });
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setLoadedTrip(data[0]);
         }
-        
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            const activeTab = Array.from(document.querySelectorAll('.tab')).find(
-                t => t.textContent.includes(tabName === 'trips' ? 'Danh sách' : 'Tạo')
-            );
-            if (activeTab) activeTab.classList.add('active');
-            
-            document.getElementById(tabName + '-tab').classList.add('active');
-        }
-        
-        async function loadTrips() {
-            const tripsList = document.getElementById('tripsList');
-            tripsList.innerHTML = '<div class="loading">Đang tải dữ liệu...</div>';
-            
-            try {
-                const { data, error } = await supabase
-                    .from('trips')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                
-                if (data.length === 0) {
-                    tripsList.innerHTML = '<div class="empty-state"><p>Chưa có chuyến đi nào. Hãy tạo chuyến đi mới!</p></div>';
-                    return;
-                }
-                
-                tripsList.innerHTML = data.map(trip => {
-                    const days = calculateDays(trip.date_from, trip.date_to);
-                    return `
-                    <div class="trip-card">
-                        <h3>${trip.trip_name}</h3>
-                        <div class="trip-info">
-                            <div class="trip-info-item">
-                                <strong>Từ:</strong> ${formatDate(trip.date_from)}
-                            </div>
-                            <div class="trip-info-item">
-                                <strong>Đến:</strong> ${formatDate(trip.date_to)}
-                            </div>
-                            <div class="trip-info-item">
-                                <strong>Số ngày:</strong> ${days} ngày
-                            </div>
-                            <div class="trip-info-item">
-                                <strong>Gia đình:</strong> ${trip.total_families || 0}
-                            </div>
-                            <div class="trip-info-item">
-                                <strong>Người:</strong> ${trip.total_people || 0}
-                            </div>
-                            <div class="trip-info-item">
-                                <strong>KS/ngày:</strong> ${formatMoney(trip.hotel_cost_per_day)}
-                            </div>
-                        </div>
-                        <div class="trip-actions">
-                            <button class="btn btn-small" onclick="viewTripDetails(${trip.id})">📅 Chi tiết & Kế hoạch</button>
-                            <button class="btn btn-small btn-danger" onclick="deleteTrip(${trip.id})">🗑️ Xóa</button>
-                        </div>
-                    </div>
-                `;
-                }).join('');
-            } catch (error) {
-                showStatus('Lỗi tải dữ liệu: ' + error.message, 'error');
-                tripsList.innerHTML = '<p style="text-align: center; color: #dc3545;">Không thể tải dữ liệu</p>';
-            }
-        }
-        
-        async function createTrip(event) {
-            event.preventDefault();
-            
-            const form = event.target;
-            const formData = new FormData(form);
-            const tripData = {};
-            
-            for (let [key, value] of formData.entries()) {
-                if (value === '') continue;
-                tripData[key] = ['total_families', 'total_people'].includes(key) 
-                    ? parseInt(value) 
-                    : ['hotel_cost_per_day', 'food_cost_per_day', 'transport_total'].includes(key)
-                    ? parseFloat(value)
-                    : value;
-            }
-            
-            try {
-                const { data, error } = await supabase
-                    .from('trips')
-                    .insert([tripData])
-                    .select();
-                
-                if (error) throw error;
-                
-                showStatus('Tạo chuyến đi thành công!', 'success');
-                form.reset();
-                switchTab('trips');
-                loadTrips();
-            } catch (error) {
-                showStatus('Lỗi tạo chuyến đi: ' + error.message, 'error');
-            }
-        }
-        
-        async function deleteTrip(id) {
-            if (!confirm('Bạn có chắc muốn xóa chuyến đi này? Tất cả dữ liệu liên quan sẽ bị xóa.')) return;
-            
-            try {
-                const { error } = await supabase
-                    .from('trips')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                showStatus('Xóa chuyến đi thành công!', 'success');
-                loadTrips();
-            } catch (error) {
-                showStatus('Lỗi xóa chuyến đi: ' + error.message, 'error');
-            }
-        }
-        
-        async function viewTripDetails(tripId) {
-            try {
-                const { data: trip, error } = await supabase
-                    .from('trips')
-                    .select('*')
-                    .eq('id', tripId)
-                    .single();
-                
-                if (error) throw error;
-                
-                currentTrip = trip;
-                
-                // Load daily food costs
-                const { data: dailyFoodData } = await supabase
-                    .from('daily_food_cost')
-                    .select('*')
-                    .eq('trip_id', tripId)
-                    .order('date');
-                
-                const dailyFoodMap = {};
-                if (dailyFoodData) {
-                    dailyFoodData.forEach(item => {
-                        dailyFoodMap[item.date] = item;
-                    });
-                }
-                
-                const days = getDaysArray(trip.date_from, trip.date_to);
-                const totalDays = days.length;
-                
-                let totalFoodCost = 0;
-                dailyFoodData?.forEach(item => {
-                    totalFoodCost += parseFloat(item.total || 0);
-                });
-                
-                const totalHotelCost = (trip.hotel_cost_per_day || 0) * totalDays;
-                const grandTotal = totalFoodCost + totalHotelCost + (trip.transport_total || 0);
-                
-                const detailContent = document.getElementById('tripDetailContent');
-                detailContent.innerHTML = `
-                    <div class="summary-box">
-                        <h2>📊 Tổng quan: ${trip.trip_name}</h2>
-                        <div class="summary-grid">
-                            <div class="summary-item">
-                                <strong>Thời gian</strong>
-                                <span>${totalDays} ngày</span>
-                            </div>
-                            <div class="summary-item">
-                                <strong>Chi phí khách sạn</strong>
-                                <span>${formatMoney(totalHotelCost)}</span>
-                            </div>
-                            <div class="summary-item">
-                                <strong>Chi phí ăn uống</strong>
-                                <span>${formatMoney(totalFoodCost)}</span>
-                            </div>
-                            <div class="summary-item">
-                                <strong>Chi phí vận chuyển</strong>
-                                <span>${formatMoney(trip.transport_total)}</span>
-                            </div>
-                            <div class="summary-item">
-                                <strong>Tổng cộng</strong>
-                                <span>${formatMoney(grandTotal)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="trip-detail-section">
-                        <h3>📅 Kế hoạch và Chi phí từng ngày</h3>
-                        <div class="daily-schedule">
-                            ${days.map((date, index) => {
-                                const dateStr = date.toISOString().split('T')[0];
-                                const foodData = dailyFoodMap[dateStr] || {};
-                                return `
-                                    <div class="day-card">
-                                        <h3>
-                                            <span>🗓️ Ngày ${index + 1} - ${formatDate(dateStr)}</span>
-                                        </h3>
-                                        <div class="day-card-content">
-                                            <div class="input-field">
-                                                <label>📝 Kế hoạch trong ngày</label>
-                                                <textarea 
-                                                    id="plan_${dateStr}" 
-                                                    placeholder="Vd: 8:00 - Ăn sáng tại khách sạn
-9:00 - Tham quan bảo tàng
-12:00 - Ăn trưa tại nhà hàng ABC
-..."
-                                                >${foodData.plan || ''}</textarea>
-                                            </div>
-                                            
-                                            <div class="expense-row">
-                                                <div class="input-field">
-                                                    <label>🍳 Ăn sáng</label>
-                                                    <input type="number" 
-                                                        id="breakfast_${dateStr}" 
-                                                        value="${foodData.breakfast || ''}" 
-                                                        placeholder="0" 
-                                                        step="1000" 
-                                                        min="0">
-                                                </div>
-                                                <div class="input-field">
-                                                    <label>🍜 Ăn trưa</label>
-                                                    <input type="number" 
-                                                        id="lunch_${dateStr}" 
-                                                        value="${foodData.lunch || ''}" 
-                                                        placeholder="0" 
-                                                        step="1000" 
-                                                        min="0">
-                                                </div>
-                                                <div class="input-field">
-                                                    <label>🍽️ Ăn tối</label>
-                                                    <input type="number" 
-                                                        id="dinner_${dateStr}" 
-                                                        value="${foodData.dinner || ''}" 
-                                                        placeholder="0" 
-                                                        step="1000" 
-                                                        min="0">
-                                                </div>
-                                                <div class="input-field">
-                                                    <label>🎯 Chi phí khác</label>
-                                                    <input type="number" 
-                                                        id="other_${dateStr}" 
-                                                        value="${foodData.other || ''}" 
-                                                        placeholder="0" 
-                                                        step="1000" 
-                                                        min="0">
-                                                </div>
-                                            </div>
-                                            
-                                            <button class="btn btn-small btn-success" onclick="saveDailyData('${dateStr}')">
-                                                💾 Lưu ngày này
-                                            </button>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        
-                        <button class="btn" onclick="saveAllDays()">💾 Lưu tất cả các ngày</button>
-                    </div>
-                `;
-                
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById('trip-detail-tab').classList.add('active');
-                
-            } catch (error) {
-                showStatus('Lỗi tải chi tiết: ' + error.message, 'error');
-            }
-        }
-        
-        async function saveDailyData(date) {
-            const plan = document.getElementById(`plan_${date}`).value;
-            const breakfast = parseFloat(document.getElementById(`breakfast_${date}`).value) || 0;
-            const lunch = parseFloat(document.getElementById(`lunch_${date}`).value) || 0;
-            const dinner = parseFloat(document.getElementById(`dinner_${date}`).value) || 0;
-            const other = parseFloat(document.getElementById(`other_${date}`).value) || 0;
-            const total = breakfast + lunch + dinner + other;
-            
-            try {
-                const { data: existing } = await supabase
-                    .from('daily_food_cost')
-                    .select('id')
-                    .eq('trip_id', currentTrip.id)
-                    .eq('date', date)
-                    .single();
-                
-                const dailyData = {
-                    trip_id: currentTrip.id,
-                    date: date,
-                    breakfast: breakfast,
-                    lunch: lunch,
-                    dinner: dinner,
-                    other: other,
-                    total: total,
-                    plan: plan
-                };
-                
-                if (existing) {
-                    await supabase
-                        .from('daily_food_cost')
-                        .update(dailyData)
-                        .eq('id', existing.id);
-                } else {
-                    await supabase
-                        .from('daily_food_cost')
-                        .insert([dailyData]);
-                }
-                
-                showStatus(`Đã lưu dữ liệu ngày ${formatDate(date)}!`, 'success');
-            } catch (error) {
-                showStatus('Lỗi lưu dữ liệu: ' + error.message, 'error');
-            }
-        }
-        
-        async function saveAllDays() {
-            const days = getDaysArray(currentTrip.date_from, currentTrip.date_to);
-            let successCount = 0;
-            
-            for (const day of days) {
-                const dateStr = day.toISOString().split('T')[0];
-                try {
-                    await saveDailyData(dateStr);
-                    successCount++;
-                } catch (error) {
-                    console.error('Error saving day:', dateStr, error);
-                }
-            }
-            
-            showStatus(`Đã lưu ${successCount}/${days.length} ngày thành công!`, 'success');
-            setTimeout(() => viewTripDetails(currentTrip.id), 1000);
-        }
-        
-        function backToList() {
-            currentTrip = null;
-            switchTab('trips');
-        }
-        
-        function calculateDays(dateFrom, dateTo) {
-            const start = new Date(dateFrom);
-            const end = new Date(dateTo);
-            const diffTime = Math.abs(end - start);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays + 1;
-        }
-        
-        function getDaysArray(dateFrom, dateTo) {
-            const days = [];
-            const start = new Date(dateFrom);
-            const end = new Date(dateTo);
-            
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                days.push(new Date(d));
-            }
-            
-            return days;
-        }
-        
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-            return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} (${dayNames[date.getDay()]})`;
-        }
-        
-        function formatMoney(value) {
-            if (!value) return '0 ₫';
-            return new Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND'
-            }).format(value);
-        }
-    </script>
-</body>
-</html>
+        alert('Đã lưu thành công!');
+      } else {
+        alert('Lỗi khi lưu. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.error('Error saving trip:', error);
+      alert('Lỗi khi lưu. Vui lòng kiểm tra kết nối.');
+    }
+    setSaving(false);
+  };
+
+  const calculateDays = () => {
+    if (!generalInfo.startDate || !generalInfo.endDate) return 0;
+    const start = new Date(generalInfo.startDate);
+    const end = new Date(generalInfo.endDate);
+    const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    return diff > 0 ? diff : 0;
+  };
+
+  const calculateNights = () => {
+    const days = calculateDays();
+    return days > 0 ? days - 1 : 0;
+  };
+
+  const calculateTotalHotelCost = () => {
+    return calculateNights() * generalInfo.hotelCostPerDay;
+  };
+
+  const calculateTotalTicketCost = () => {
+    return (generalInfo.adults * generalInfo.adultTicketCost) + 
+           (generalInfo.children * generalInfo.childTicketCost);
+  };
+
+  const addActivity = (day) => {
+    const newPlans = { ...dailyPlans };
+    if (!newPlans[day]) {
+      newPlans[day] = [];
+    }
+    newPlans[day].push({
+      id: Date.now(),
+      time: '',
+      info: '',
+      note: '',
+      cost: 0
+    });
+    setDailyPlans(newPlans);
+  };
+
+  const updateActivity = (day, activityId, field, value) => {
+    const newPlans = { ...dailyPlans };
+    const activity = newPlans[day].find(a => a.id === activityId);
+    if (activity) {
+      activity[field] = field === 'cost' ? parseFloat(value) || 0 : value;
+      setDailyPlans(newPlans);
+    }
+  };
+
+  const deleteActivity = (day, activityId) => {
+    const newPlans = { ...dailyPlans };
+    newPlans[day] = newPlans[day].filter(a => a.id !== activityId);
+    setDailyPlans(newPlans);
+  };
+
+  const calculateDayTotal = (day) => {
+    if (!dailyPlans[day]) return 0;
+    return dailyPlans[day].reduce((sum, activity) => sum + (activity.cost || 0), 0);
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  };
+
+  const days = calculateDays();
+  const dayArray = Array.from({ length: days }, (_, i) => i + 1);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h1 className="text-4xl font-bold text-indigo-600 text-center mb-2">
+            🏔️ Cả Nhà Mình Đi Du Lịch Sa Pa 🏔️
+          </h1>
+          <p className="text-center text-gray-600">Kế hoạch chi tiết cho chuyến đi gia đình</p>
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={saveTrip}
+              disabled={saving}
+              className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition disabled:bg-gray-400"
+            >
+              <Save size={20} />
+              {saving ? 'Đang lưu...' : 'Lưu kế hoạch'}
+            </button>
+          </div>
+        </div>
+
+        {/* Phần 1: Thông tin chung */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Calendar className="text-indigo-600" />
+            Phần 1: Thông tin chung
+          </h2>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Ngày tháng */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ngày bắt đầu
+                </label>
+                <input
+                  type="date"
+                  value={generalInfo.startDate}
+                  onChange={(e) => setGeneralInfo({...generalInfo, startDate: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ngày kết thúc
+                </label>
+                <input
+                  type="date"
+                  value={generalInfo.endDate}
+                  onChange={(e) => setGeneralInfo({...generalInfo, endDate: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div className="bg-indigo-50 p-4 rounded-lg">
+                <p className="text-lg font-semibold text-indigo-700">
+                  Tổng số ngày: <span className="text-2xl">{days}</span> ngày
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  ({calculateNights()} đêm)
+                </p>
+              </div>
+            </div>
+
+            {/* Số người và chi phí */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Users className="inline mr-1" size={16} />
+                    Người lớn
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={generalInfo.adults}
+                    onChange={(e) => setGeneralInfo({...generalInfo, adults: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Users className="inline mr-1" size={16} />
+                    Trẻ em
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={generalInfo.children}
+                    onChange={(e) => setGeneralInfo({...generalInfo, children: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Chi phí khách sạn/ngày
+                </label>
+                <input
+                  type="number"
+                  value={generalInfo.hotelCostPerDay}
+                  onChange={(e) => setGeneralInfo({...generalInfo, hotelCostPerDay: parseFloat(e.target.value) || 0})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                />
+                <p className="text-sm text-gray-600 mt-1">
+                  Tổng: {formatCurrency(calculateTotalHotelCost())}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vé người lớn
+                  </label>
+                  <input
+                    type="number"
+                    value={generalInfo.adultTicketCost}
+                    onChange={(e) => setGeneralInfo({...generalInfo, adultTicketCost: parseFloat(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vé trẻ em
+                  </label>
+                  <input
+                    type="number"
+                    value={generalInfo.childTicketCost}
+                    onChange={(e) => setGeneralInfo({...generalInfo, childTicketCost: parseFloat(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <p className="text-lg font-semibold text-green-700">
+                  Tổng vé di chuyển: {formatCurrency(calculateTotalTicketCost())}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tổng chi phí */}
+          <div className="mt-6 bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-6 rounded-lg">
+            <h3 className="text-xl font-bold mb-2">Tổng chi phí dự kiến</h3>
+            <p className="text-3xl font-bold">
+              {formatCurrency(calculateTotalHotelCost() + calculateTotalTicketCost())}
+            </p>
+            <p className="text-sm mt-2 opacity-90">
+              (Chưa bao gồm chi phí hoạt động hàng ngày)
+            </p>
+          </div>
+        </div>
+
+        {/* Phần 2: Chi tiết kế hoạch */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <DollarSign className="text-indigo-600" />
+            Phần 2: Chi tiết kế hoạch theo ngày
+          </h2>
+
+          {days === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              Vui lòng chọn ngày bắt đầu và kết thúc để xem kế hoạch chi tiết
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {dayArray.map((day) => (
+                <div key={day} className="border-2 border-indigo-200 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-indigo-600">
+                      Ngày {day}
+                    </h3>
+                    <button
+                      onClick={() => addActivity(day)}
+                      className="flex items-center gap-2 bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition"
+                    >
+                      <Plus size={18} />
+                      Thêm hoạt động
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {dailyPlans[day]?.map((activity) => (
+                      <div key={activity.id} className="grid grid-cols-12 gap-2 bg-gray-50 p-3 rounded-lg">
+                        <input
+                          type="time"
+                          value={activity.time}
+                          onChange={(e) => updateActivity(day, activity.id, 'time', e.target.value)}
+                          className="col-span-2 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Thời gian"
+                        />
+                        <input
+                          type="text"
+                          value={activity.info}
+                          onChange={(e) => updateActivity(day, activity.id, 'info', e.target.value)}
+                          className="col-span-4 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Thông tin hoạt động"
+                        />
+                        <input
+                          type="text"
+                          value={activity.note}
+                          onChange={(e) => updateActivity(day, activity.id, 'note', e.target.value)}
+                          className="col-span-3 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Ghi chú"
+                        />
+                        <input
+                          type="number"
+                          value={activity.cost}
+                          onChange={(e) => updateActivity(day, activity.id, 'cost', e.target.value)}
+                          className="col-span-2 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Giá tiền"
+                        />
+                        <button
+                          onClick={() => deleteActivity(day, activity.id)}
+                          className="col-span-1 bg-red-500 text-white rounded hover:bg-red-600 transition flex items-center justify-center"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 bg-indigo-50 p-3 rounded-lg">
+                    <p className="text-lg font-semibold text-indigo-700">
+                      Tổng chi phí ngày {day}: {formatCurrency(calculateDayTotal(day))}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SapaFamilyTrip;
